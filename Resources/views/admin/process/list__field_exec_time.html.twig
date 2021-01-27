@@ -1,0 +1,8 @@
+{% extends 'SonataAdminBundle:CRUD:base_list_field.html.twig' %}
+
+{% block field %}
+    {% if object.endedAt %}
+        {% set difference = date(object.endedAt).diff(date(object.startedAt)) %}
+        {{ difference.format('%H:%I:%S') }}
+    {% endif %}
+{% endblock %}

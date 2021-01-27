@@ -1,0 +1,26 @@
+{
+    "name": "azuracom/process-bundle",
+    "type": "symfony-bundle",
+    "description": "Symfony process",
+    "keywords": [
+        "process",
+        "symfony"
+    ],
+    "authors": [
+        {
+            "name": "Thibaut DUMALIN",
+            "email": "tdumalin@azuracom.com"
+        }
+    ],
+    "require": {
+        "php": "^7.0"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "Azuracom\\ProcessBundle\\": ""
+        }
+    }
+}
