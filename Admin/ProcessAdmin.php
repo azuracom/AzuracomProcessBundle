@@ -185,6 +185,8 @@ class ProcessAdmin extends AbstractAdmin
         $this->setTemplate('list',"@AzuracomProcess/admin/process/list.html.twig");
         $this->setTemplate('log_list',"@AzuracomProcess/admin/process/log_list.html.twig");
         $this->setBaseControllerName(ProcessAdminController::class);
+        $this->addChild($this->getConfigurationPool()->getAdminByAdminCode("azuracom_process.admin.process_resource_tag"));
+
     }
 
     public function getTypeList()

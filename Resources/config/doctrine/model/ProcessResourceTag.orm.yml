@@ -18,14 +18,16 @@ Azuracom\ProcessBundle\Model\ProcessResourceTag:
         resourceCode:
             type: string
             length: 255
+            nullable: true
 
         comment:
             type: string
             length: 255
+            nullable: true
 
     manyToOne:
         process:
-            targetEntity: Azuracom\ProcessBundle\Model\Process
+            targetEntity: Azuracom\ProcessBundle\Model\ProcessInterface
             inversedBy: resourceTags
             joinColumn:
                 name: process_id

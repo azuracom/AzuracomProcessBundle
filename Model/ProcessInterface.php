@@ -29,6 +29,8 @@ interface ProcessInterface
 
     public function resetRessourceTags():self;
 
+    public function getResourceTags();
+
     public function getStatusColor() :string;
 
     public static function getStatusColorStatic(string $status) :string;

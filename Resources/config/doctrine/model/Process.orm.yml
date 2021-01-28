@@ -57,7 +57,7 @@ Azuracom\ProcessBundle\Model\Process:
 
     oneToMany:
         resourceTags:
-            targetEntity: Azuracom\ProcessBundle\Model\ProcessResourceTag
+            targetEntity: Azuracom\ProcessBundle\Model\ProcessResourceTagInterface
             mappedBy: process  
             cascade: ['persist']
             orphanRemoval: true                  

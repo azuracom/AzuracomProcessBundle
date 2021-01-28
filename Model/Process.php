@@ -190,6 +190,11 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
+    public function getResourceTags()
+    {
+        return $this->resourceTags;
+    }
+
     public function getStatusColor(): string
     {
         return self::getStatusColorStatic($this->status);
