@@ -5,7 +5,7 @@ services:
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         public: true
 
-    #services
+    #public services
     azuracom_process.handler_provider:
         class: Azuracom\ProcessBundle\Handler\HandlerProvider
     
@@ -15,10 +15,21 @@ services:
     azuracom_process.monolog.process_handler:
         class: Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler
 
+    #private services
     Azuracom\ProcessBundle\EventListener\ProcessSubscriber:
         public: false
         tags:
-            - { name: 'doctrine.event_subscriber' }      
+            - { name: 'doctrine.event_subscriber' }     
+
+    Azuracom\ProcessBundle\Command\ClearProcessCommand:
+        public: false
+        tags:
+            - { name: 'console.command' }    
+            
+    Azuracom\ProcessBundle\Command\DeferProcessHandleCommand:
+        public: false
+        tags:
+            - { name: 'console.command' }              
                         
 
     #aliases

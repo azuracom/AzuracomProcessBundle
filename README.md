@@ -172,7 +172,7 @@ class ImportProductHandler implements HandlerInterface
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
-use App\Process\HandlerProviderInterface;
+use App\Process\ImportProductHandler;
 
 /**
  * @Route("/product")
@@ -275,6 +275,72 @@ azuracom_process:
     user_class: App\Entity\User
 ```
 
+
+## Create a deferred process
+
+1. Create object and change status
+
+```php
+//src/Controller/ProductController.php
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
+use Sylius\Component\Resource\Factory\FactoryInterface;
+
+/**
+ * @Route("/product")
+ */
+class ProductController extends AbstractController
+{
+    /**
+     * @Route("/import",name="product_import")
+     */
+    public function import(FactoryInterface $processFactory)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $process = $processFactory->createNew();
+        $process->setType(ImportProductHandler::getType());
+        $process->setStatus(ProcessInterface::STATUS_WAITING_DEFERRED)
+        
+        $em->persist($process);
+        $em->flush();
+    }
+}
+```
+
+2. Edit cron tab
+
+```console
+crontab -e
+```
+
+```console
+#every day at 8am for example
+0 8 * * * php /path/to/project/bin/console azuracom:process:defer-handle
+```
+
+
+```console
+sudo service crontab reload
+```
+
+## Autoremove old process
+```console
+crontab -e
+```
+
+```console
+#every day at 8am
+0 8 * * * php /path/to/project/bin/console azuracom:process:clear #default delay is  6 month
+#manually set delay
+#0 8 * * * php /path/to/project/bin/console azuracom:process:clear --modify='1 month'
+```
+
+
+```console
+sudo service crontab reload
+```
 
 ## Use datatable for log consultation in admin
 

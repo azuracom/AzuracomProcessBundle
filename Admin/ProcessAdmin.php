@@ -141,7 +141,7 @@ class ProcessAdmin extends AbstractAdmin
             ))
             ->add('user', 'text', array('label' => 'Utilisateur'))
             ->add('originalFileName', null, array('label' => 'Nom fichier'))
-            ->add('createdAt', null, array('label' => 'Date de création', 'pattern' => 'dd/MM/Y HH:mm:ss'))
+            ->add('createdAt', null, array('label' => 'Date de création', 'format' => 'd/m/Y H:i:s'))
             ->add('executionTime', null, array(
                 'label' => "Temps d'exécution",
                 'template' => '@AzuracomProcess/admin/process/list__field_exec_time.html.twig'
