@@ -1,0 +1,340 @@
+Installation
+============
+
+### Step 1: Download the Bundle
+
+```js
+//composer.json
+{
+    //...
+    "require": {
+        //...
+        "azuracom/process-bundle": "1.0"
+    },
+    "repositories":[
+        {
+          "type": "vcs",
+          "url": "git@github.com:azuracom/AzuracomProcessBundle.git"
+        }
+    ],
+}
+```
+
+```console
+$ composer update
+```
+
+If first time downloading a private repo for azuracom, you should have something like this in console:
+
+```console
+Could not fetch https://api.github.com/repos/azuracom/AzuracomProcessBundle, please review your configured GitHub OAuth token or enter a new one to access private repos
+Head to https://github.com/settings/tokens/new?scopes=repo&description=SomeDescription
+to retrieve a token. It will be stored in "/home/thibaut/.config/composer/auth.json" for future use by Composer.
+Token (hidden): 
+```
+Open github link, go to the bottom of the page and click on "Generate token", copy new generated token and past to the console
+
+### Step 2: Enable and configure the Bundle
+
+Then, enable the bundle by adding it to the list of registered bundles
+in the `config/bundles.php` file of your project:
+
+```php
+// config/bundles.php
+
+return [
+    // ...
+    Azuracom\ProcessBundle\AzuracomProcessBundle::class => ['all' => true],
+];
+```
+
+Configure
+in the `config/packages/monolog.yaml` file of your project:
+
+```yaml
+# config/packages/monolog.yaml
+monolog:
+    channels: ['process']
+    handlers:
+        process:
+            type: service
+            id: 'azuracom_process.monolog.process_handler'
+            channels: [process]
+```
+
+in the `config/packages/stof_doctrine_extensions.yaml` file of your project:
+
+```yaml
+# config/packages/stof_doctrine_extensions.yam
+stof_doctrine_extensions:
+    orm:
+        default:        
+            timestampable: true    
+```
+
+
+Usage
+============
+
+1. Create an handler 
+
+Note that the handler has to implements Azuracom\ProcessBundle\Handler\HandlerInterface
+
+```php
+//src/Process/ImportProductHandler.php
+
+namespace App\Process;
+
+use Azuracom\ProcessBundle\Handler\HandlerInterface;
+use Azuracom\ProcessBundle\Helper\ProcessHelperInterface;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\Product;
+
+class ImportProductHandler implements HandlerInterface
+{
+    /** @var ProcessHelperInterface */
+    protected $helper;
+
+    /** @var EntityManagerInterface */
+    protected $em;
+
+    public function __construct(ProcessHelperInterface $helper,EntityManagerInterface $em)
+    {
+        $this->helper = $helper;   
+    }
+    
+    public function handle(ProcessInterface $process)
+    {
+        //init stuff
+        $process->startProcess();
+        $this->helper->setSubject($process);
+        
+        //some sample with csv to datavase
+        // ref | name | stock
+        if (($handle = fopen("product.csv", "r")) !== false) {
+            $i = 1;
+            while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+                $data = [
+                    'ref' => $row[0],
+                    'name' => $row[1],
+                    'stock' => $row[2],
+                ];
+
+                if(!$product = $this->em->getRepository(Product::class)->findOneBy(['ref'=>$data['ref']])){
+                    $product = new Product();
+                    $product->setReference($data['ref']);
+                    $this->helper->info(sprintf("Nouveau produit: %s",$data['ref']));
+                }else{
+                    $this->helper->info(sprintf("Mise à jour produit: %s",$data['ref']));
+                }
+
+                $product->setName($data['name']);
+                if(!is_int($data['stock'])){
+                    $this->helper->error(sprintf("Ligne %s: stock doit être une valeur entière",$i)); // change process status
+                }
+                $i++;
+            }
+        }
+
+        //tag the process as ended
+        $process->endProcess();
+    }
+
+    public function isEligible(ProcessInterface $process): bool
+    {
+        return $process->getType() == self::getType();
+    }
+    
+    public function configure(): void
+    {
+
+    }
+
+    public static function getType() : string
+    {
+        return 'import_product';
+    }
+
+    public static function getTypeLabel() :string
+    {
+        return "Import des produits";
+    }
+}
+
+```
+
+2. Use handler provider in controller or command
+
+```php
+//src/Controller/ProductController.php
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
+use Sylius\Component\Resource\Factory\FactoryInterface;
+use App\Process\HandlerProviderInterface;
+
+/**
+ * @Route("/product")
+ */
+class ProductController extends AbstractController
+{
+    /**
+     * @Route("/import",name="product_import")
+     */
+    public function import(
+        HandlerProviderInterface $provider,
+        FactoryInterface $processFactory
+    )
+    {
+        $em = $this->getDoctrine()->getManager();
+        $process = $processFactory->createNew();
+        $process->setType(ImportProductHandler::getType());
+        
+        $handler = $provider->getHandler($process);
+        $handler->handle($process);
+        
+        $em->persist($process);
+        $em->flush();
+    }
+}
+```
+
+3. Sonata admin 
+
+```yaml
+# config/packages/sonata_admin.yaml
+sonata_admin:
+    groups:
+        Process:
+            icon: '<i class="fa fa-cog" aria-hidden="true"></i>'
+            items:
+                - azuracom_process.admin.process
+```
+
+Advanced usage
+============
+
+## Customize
+
+Models implements sylius resource and can be customized in config
+
+```yaml
+# config/packages/azuracom_process.yaml
+azuracom_process:
+    resources:
+        process:
+            classes:
+                model:                Azuracom\ProcessBundle\Model\Process
+                repository:           ~
+                factory:              Sylius\Component\Resource\Factory\Factory
+                admin:                Azuracom\ProcessBundle\Admin\ProcessAdmin
+```
+
+## Link user and process
+
+
+```yaml
+# config/packages/azuracom_process.yaml
+azuracom_process:
+    resources:
+        process:
+            classes:
+                model: App\Entity\Process
+
+``` 
+
+```php
+//src/Entity/Process.php
+
+namespace App\Entity;
+
+use Azuracom\ProcessBundle\Model\Process as ModelProcess;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @ORM\Entity
+ * @ORM\Table(name="process")
+ */
+class Process extends ModelProcess
+{
+    /**
+     * @ORM\ManyToOne(targetEntity="User")
+     * @ORM\JoinColumn(name="user_id", referencedColumnName="id")
+     */
+    protected $user;
+}
+``` 
+
+
+TODO: autoconfigure this section with something like
+
+```yaml
+# config/packages/azuracom_process.yaml
+azuracom_process:
+    user_class: App\Entity\User
+```
+
+
+## Use datatable for log consultation in admin
+
+Install webpack
+
+https://symfony.com/doc/current/frontend.html
+
+1. Add datatable dependency
+
+```console
+yarn add datatables.net
+yarn add datatables.net-bs
+```
+
+2. Include css and js 
+
+```js
+//assets/app.js
+require('./styles/app.css');
+
+import $ from 'jquery';
+window.jQuery = $;
+import DataTable from 'datatables.net';
+import 'datatables.net-bs';
+import 'datatables.net-buttons';
+
+window.initDatatable = function(element)
+{
+    $(element+" table").DataTable({
+        //some options
+    });
+}
+```
+
+```css
+/* assets/styles/app.css */
+@import "~datatables.net-bs/css/dataTables.bootstrap.min.css";
+```
+
+3. Sonata template
+
+```yaml
+# config/packages/sonata_admin.yaml
+sonata_admin:
+    templates:
+        layout: back/layout_admin.html.twig 
+```
+
+```twig
+{# templates/back/layout_admin.html.twig  #}
+{% extends "@SonataAdmin/standard_layout.html.twig" %}
+
+{% block stylesheets %}
+	{{ parent() }}
+    {{ encore_entry_link_tags('app') }}             
+{% endblock %}
+
+{% block javascripts %}
+    {{ encore_entry_script_tags('app') }} 
+    {{ parent() }}
+  </script>
+{% endblock %}
+```

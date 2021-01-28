@@ -39,9 +39,9 @@ interface ProcessInterface
 
     public function getType(): string;
 
-    public function setUser(UserInterface $user = null);
+    public function setUser(?UserInterface $user = null);
 
-    public function getUser(): UserInterface;
+    public function getUser(): ?UserInterface;
 
     public function setFile(File $file = null): self;
 

@@ -17,13 +17,11 @@ Azuracom\ProcessBundle\Model\Process:
             nullable: true             
 
         uniqueId:
-            column: unique_id
             type: string
             length: 255 
             nullable: true
 
         originalFilename:
-            column: original_filename
             type: string
             length: 255  
             nullable: true      
@@ -46,11 +44,20 @@ Azuracom\ProcessBundle\Model\Process:
 
         createdAt:
             type: datetime
+            nullable: true
             gedmo:
                 timestampable:
                     on: create
         updatedAt:
             type: datetime
+            nullable: true
             gedmo:
                 timestampable:
                     on: update
+
+    oneToMany:
+        resourceTags:
+            targetEntity: Azuracom\ProcessBundle\Model\ProcessResourceTag
+            mappedBy: process  
+            cascade: ['persist']
+            orphanRemoval: true                  

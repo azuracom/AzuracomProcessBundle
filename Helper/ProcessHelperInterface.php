@@ -1,8 +1,9 @@
 <?php
 
-namespace Azuracom\ProcessBundle\Handler;
+namespace Azuracom\ProcessBundle\Helper;
 
 use Azuracom\ProcessBundle\Model\ProcessInterface;
+use Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler;
 use Psr\Log\LoggerInterface;
 
 interface ProcessHelperInterface

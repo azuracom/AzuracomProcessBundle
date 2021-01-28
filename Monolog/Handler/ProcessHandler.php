@@ -27,6 +27,6 @@ class ProcessHandler extends StreamHandler
             $process->generateUniqueId();
         }
 
-        $this->url = sprintf($this->logDir . self::DEFAULT_PATH, $process->generateUniqueId());
+        $this->url = sprintf($this->logDir . self::DEFAULT_PATH, $process->getUniqueId());
     }
 }

@@ -1,28 +1,21 @@
 
-{% if object.log is not empty %}
-    <button class='btn btn-default btn-sm' type="button" data-toggle="modal" data-target="#log{{ object.id }}">
-    	<span class='glyphicon glyphicon-info-sign'></span> Log
-    </button>
-    
-    <div class="modal fade modal-log" id="log{{ object.id }}" tabindex="-1" role="dialog" >
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" >Logs</h4>
-                </div>
-                <div class="modal-body">
-    				{{ object.log|raw|nl2br }}
-                </div>
-              	<div class="modal-footer">
-    				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                </div>            
+<a class='btn btn-default btn-sm load-log' href="{{ admin.generateObjectUrl('loadLog', object) }}" data-target="#log{{ object.id }}">
+    <span class='glyphicon glyphicon-info-sign'></span> Log
+</a>
+
+<div class="modal fade modal-log" id="log{{ object.id }}" tabindex="-1" role="dialog" >
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" >Logs</h4>
             </div>
+            <div class="modal-body">
+                
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>            
         </div>
     </div>
-    {% if app.request.get('lastProcessId') == object.id %}
-        <script>
-            $('#log{{ object.id }}').modal('show');
-        </script>
-    {% endif %}    
-{% endif %}
+</div>   

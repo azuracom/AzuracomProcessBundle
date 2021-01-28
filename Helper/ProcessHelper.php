@@ -2,7 +2,6 @@
 
 namespace Azuracom\ProcessBundle\Helper;
 
-use Azuracom\ProcessBundle\Handler\ProcessHelperInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler;
 use Psr\Log\LoggerInterface;

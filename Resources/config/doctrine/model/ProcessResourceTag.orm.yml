@@ -1,0 +1,34 @@
+Azuracom\ProcessBundle\Model\ProcessResourceTag:
+    type: mappedSuperclass
+    table: process_resource_tag
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        className:
+            type: string
+            length: 255
+
+        resourceId:
+            type: string
+            length: 255
+
+        resourceCode:
+            type: string
+            length: 255
+
+        comment:
+            type: string
+            length: 255
+
+    manyToOne:
+        process:
+            targetEntity: Azuracom\ProcessBundle\Model\Process
+            inversedBy: resourceTags
+            joinColumn:
+                name: process_id
+                referencedColumnName: id
+
+

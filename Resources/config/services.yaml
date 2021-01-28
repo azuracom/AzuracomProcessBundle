@@ -3,16 +3,23 @@ services:
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        public: true
 
     #services
     azuracom_process.handler_provider:
         class: Azuracom\ProcessBundle\Handler\HandlerProvider
-        public: true
     
     azuracom_process.helper:
         class: Azuracom\ProcessBundle\Helper\ProcessHelper
-        public: true
+        
+    azuracom_process.monolog.process_handler:
+        class: Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler
 
+    Azuracom\ProcessBundle\EventListener\ProcessSubscriber:
+        public: false
+        tags:
+            - { name: 'doctrine.event_subscriber' }      
+                        
 
     #aliases
     Azuracom\ProcessBundle\Handler\HandlerProviderInterface: '@azuracom_process.handler_provider'   
@@ -20,3 +27,4 @@ services:
         
 parameters:
     azuracom_process.types: []
+    azuracom_process.status: []

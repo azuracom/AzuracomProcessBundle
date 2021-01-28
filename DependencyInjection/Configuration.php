@@ -4,7 +4,6 @@ namespace Azuracom\ProcessBundle\DependencyInjection;
 
 use Azuracom\ProcessBundle\Admin\ProcessAdmin;
 use Azuracom\ProcessBundle\Admin\ProcessResourceTagAdmin;
-use Azuracom\ProcessBundle\Factory\ProcessFactory;
 use Azuracom\ProcessBundle\Model\Process;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Azuracom\ProcessBundle\Model\ProcessResourceTag;
@@ -41,7 +40,7 @@ class Configuration implements ConfigurationInterface
                                         ->scalarNode('interface')->defaultValue(ProcessInterface::class)->cannotBeEmpty()->end()
                                         ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
                                         ->scalarNode('repository')->cannotBeEmpty()->end()
-                                        ->scalarNode('factory')->defaultValue(ProcessFactory::class)->end()
+                                        ->scalarNode('factory')->defaultValue(Factory::class)->end()
                                         ->scalarNode('form')->defaultValue(DefaultResourceType::class)->cannotBeEmpty()->end()
                                         ->scalarNode('admin')->defaultValue(ProcessAdmin::class)->end()
                                     ->end()

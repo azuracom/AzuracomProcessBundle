@@ -92,8 +92,7 @@ class Process implements ResourceInterface, ProcessInterface
 
     public function __construct($type = null, $autoStart = true)
     {
-        $this->resourceTags = new ArrayCollection();
-
+        $this->resourceTags = new ArrayCollection();        
         $this->type = $type;
         if ($autoStart) {
             $this->startProcess();
@@ -102,7 +101,7 @@ class Process implements ResourceInterface, ProcessInterface
 
     public function __toString()
     {
-        return $this->id ? $this->getTypeName() . " - " . $this->id : "Nouveau processus";
+        return $this->id ? $this->getType() . " - " . $this->id : "Nouveau processus";
     }
 
     public function generateUniqueId(): void
@@ -198,19 +197,21 @@ class Process implements ResourceInterface, ProcessInterface
 
     public static function getStatusColorStatic(string $status): string
     {
-        switch ($status) {
-            case self::STATUS_HAS_ERROR:
-                return 'danger';
-
-            case self::STATUS_SUCCEDED:
-                return 'success';
-
-            case self::STATUS_HAS_WARNING:
-                return 'warning';
-
-            default:
-                return 'default';
+        $status = strtolower($status);
+        if(preg_match("#warning#",$status)){
+            return 'warning';
         }
+
+        if(preg_match("#error#",$status)){
+            return 'danger';
+        }
+
+        if(preg_match("#succeded|notice#",$status)){
+            return 'success';
+        }
+
+        return 'default';
+
     }
 
 
@@ -256,7 +257,7 @@ class Process implements ResourceInterface, ProcessInterface
      *
      * @return Process
      */
-    public function setUser(UserInterface $user = null): ProcessInterface
+    public function setUser(?UserInterface $user = null): ProcessInterface
     {
         $this->user = $user;
 
@@ -268,7 +269,7 @@ class Process implements ResourceInterface, ProcessInterface
      *
      * @return UserInterface
      */
-    public function getUser(): UserInterface
+    public function getUser(): ?UserInterface
     {
         return $this->user;
     }

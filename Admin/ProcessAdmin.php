@@ -2,9 +2,9 @@
 
 namespace Azuracom\ProcessBundle\Admin;
 
+use Azuracom\ProcessBundle\Controller\ProcessAdminController;
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Datagrid\DatagridMapper;
-use Azuracom\ProcessBundle\Model\Process;
 use Sonata\AdminBundle\Route\RouteCollection;
 use Sonata\DoctrineORMAdminBundle\Filter\ModelAutocompleteFilter;
 use Sonata\Form\Type\DateRangePickerType;
@@ -25,8 +25,10 @@ class ProcessAdmin extends AbstractAdmin
         $collection
             ->remove('show')
             ->remove('export')
-            ->remove('delete')
-            ->remove('edit');
+            //->remove('delete')
+            ->remove('edit')
+            ->remove('create')
+            ->add('loadLog', $this->getRouterIdParameter().'/load-log');
     }
 
     public function getPersistentParameters()
@@ -41,15 +43,31 @@ class ProcessAdmin extends AbstractAdmin
         return $parameters;
     }
 
+    public function getStatusList()
+    {
+        $statuss = $this->getConfigurationPool()->getContainer()->getParameter("azuracom_process.status");
+        $list = [];
+        foreach($statuss as $status){
+            $list[$status] = $this->getStatusLabel($status);
+        }
+
+        return $list;
+    }
+
+    public function getStatusLabel($status)
+    {
+        return str_replace('_',' ',$status);
+    }
+
     protected function configureDatagridFilters(DatagridMapper $datagridMapper)
     {
         $datagridMapper
             ->add('id', null, array('show_filter' => true))
             ->add('type', null, array('show_filter' => true), ChoiceType::class, array(
-                'choices' => array_flip($this->getTypes())
+                'choices' => array_flip($this->getTypeList())
             ))
             ->add('status', null, array('show_filter' => true, 'label' => 'Statut'), ChoiceType::class, array(
-                'choices' => array_flip(Process::getStatusList())
+                'choices' => array_flip($this->getStatusList())
             ))
             ->add(
                 'user',
@@ -117,7 +135,10 @@ class ProcessAdmin extends AbstractAdmin
 
         $listMapper
             ->add('id')
-            ->add('type', null, array('label' => 'Type'))
+            ->add('type', null, array(
+                'label' => 'Type',
+                'template'=>'@AzuracomProcess/admin/process/list__field_type.html.twig'  
+            ))
             ->add('user', 'text', array('label' => 'Utilisateur'))
             ->add('originalFileName', null, array('label' => 'Nom fichier'))
             ->add('createdAt', null, array('label' => 'Date de création', 'pattern' => 'dd/MM/Y HH:mm:ss'))
@@ -134,11 +155,11 @@ class ProcessAdmin extends AbstractAdmin
                 'template'=>'@AzuracomProcess/admin/process/list__field_options.html.twig'
             ))
             ->add('_action', null, array(
-                'actions' => array(
+                'actions' => array(                    
                     'log' => array('template' => '@AzuracomProcess/admin/process/list__action_log.html.twig'),
                     'file' => array('template' => '@AzuracomProcess/admin/process/list__action_file.html.twig'),
                     'tag' => array('template' => '@AzuracomProcess/admin/process/list__action_tag.html.twig'),
-
+                    'delete' => [],
                 )
             ));
     }
@@ -162,9 +183,11 @@ class ProcessAdmin extends AbstractAdmin
     {
         parent::configure();
         $this->setTemplate('list',"@AzuracomProcess/admin/process/list.html.twig");
+        $this->setTemplate('log_list',"@AzuracomProcess/admin/process/log_list.html.twig");
+        $this->setBaseControllerName(ProcessAdminController::class);
     }
 
-    public function getTypes()
+    public function getTypeList()
     {
         return $this->getConfigurationPool()->getContainer()->getParameter("azuracom_process.types");
     }
