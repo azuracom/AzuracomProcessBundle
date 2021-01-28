@@ -2,7 +2,7 @@
 
 namespace Azuracom\ProcessBundle\Monolog\Handler;
 
-use Azuracom\ProcessBundle\Model\Process;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\StreamHandler;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -21,7 +21,7 @@ class ProcessHandler extends StreamHandler
         $this->formatter = new JsonFormatter();
     }
 
-    public function setSubject(Process $process)
+    public function setSubject(ProcessInterface $process)
     {
         if(!$process->getUniqueId()){
             $process->generateUniqueId();

@@ -46,7 +46,7 @@ class ProcessAdmin extends AbstractAdmin
         $datagridMapper
             ->add('id', null, array('show_filter' => true))
             ->add('type', null, array('show_filter' => true), ChoiceType::class, array(
-                'choices' => array_flip(Process::getTypeList())
+                'choices' => array_flip($this->getTypes())
             ))
             ->add('status', null, array('show_filter' => true, 'label' => 'Statut'), ChoiceType::class, array(
                 'choices' => array_flip(Process::getStatusList())
@@ -162,5 +162,10 @@ class ProcessAdmin extends AbstractAdmin
     {
         parent::configure();
         $this->setTemplate('list',"@AzuracomProcess/admin/process/list.html.twig");
+    }
+
+    public function getTypes()
+    {
+        return $this->getConfigurationPool()->getContainer()->getParameter("azuracom_process.types");
     }
 }

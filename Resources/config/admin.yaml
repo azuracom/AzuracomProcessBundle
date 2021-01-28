@@ -1,0 +1,12 @@
+services:
+    azuracom_process.admin.process:
+        class: '%azuracom_process.admin.process.class%'
+        arguments: [null, '%azuracom_process.model.process.class%', ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Process }
+
+    azuracom_process.admin.process_resource_tag:
+        class: '%azuracom_process.admin.process_resource_tag.class%'
+        arguments: [null, '%azuracom_process.model.process_resource_tag.class%', ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, show_in_dashboard: false }

@@ -1,0 +1,24 @@
+Azuracom\ProcessBundle\Model\Process:
+    type: mappedSuperclass
+    table: process
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        className:
+            type: string
+            length: 255
+
+        ressourceId:
+            type: string
+            length: 255
+
+        ressourceCode:
+            type: string
+            length: 255   
+            
+        comment:
+            type: string
+            length: 255             

@@ -2,14 +2,14 @@
 
 namespace Azuracom\ProcessBundle\Handler;
 
-use Azuracom\ProcessBundle\Model\Process;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
 
 interface HandlerInterface
 {
     public static function getType() : string;
     public static function getTypeLabel() :string;
     
-    public function handle(Process $process);
-    public function isEligible(Process $process): bool;
+    public function handle(ProcessInterface $process);
+    public function isEligible(ProcessInterface $process): bool;
     public function configure(): void;
 }

@@ -1,17 +1,18 @@
 <?php
 
-namespace Azuracom\ProcessBundle\Process;
+namespace Azuracom\ProcessBundle\Helper;
 
-use Azuracom\ProcessBundle\Model\Process;
+use Azuracom\ProcessBundle\Handler\ProcessHelperInterface;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler;
 use Psr\Log\LoggerInterface;
 
-class ProcessHelper
+class ProcessHelper implements ProcessHelperInterface
 {
     /** @var LoggerInterface */
     protected $logger;
 
-    /** @var Process|null */
+    /** @var ProcessInterface|null */
     protected $process;
 
     public function __construct(LoggerInterface $processLogger)
@@ -19,10 +20,12 @@ class ProcessHelper
         $this->logger = $processLogger;
     }
 
-    public function setSubject(Process $process)
+    public function setSubject(ProcessInterface $process) : ProcessHelperInterface
     {
         $this->process = $process;
         $this->getHandler()->setSubject($process);
+
+        return $this;
     }
 
     public function getLogger(): LoggerInterface
@@ -30,7 +33,7 @@ class ProcessHelper
         return $this->logger;
     }
 
-    public function getLogAsArray()
+    public function getLogAsArray() : array
     {
         $content = file_get_contents($this->getHandler()->getUrl());
         $rows = explode("\n", $content);
@@ -52,19 +55,19 @@ class ProcessHelper
             call_user_func_array([$this->logger, $name], $arguments);
             switch ($name) {
                 case "warning":
-                    if ($this->process->getStatus() != Process::STATUS_HAS_ERROR) {
-                        $this->process->setStatus(Process::STATUS_HAS_WARNING);
+                    if ($this->process->getStatus() != ProcessInterface::STATUS_HAS_ERROR) {
+                        $this->process->setStatus(ProcessInterface::STATUS_HAS_WARNING);
                     }
                     break;
 
                 case "error":
-                    $this->process->setStatus(Process::STATUS_HAS_ERROR);
+                    $this->process->setStatus(ProcessInterface::STATUS_HAS_ERROR);
                     break;
             }
         }
     }
 
-    private function getHandler(): ProcessHandler
+    public function getHandler(): ProcessHandler
     {
         return $this->logger->getHandlers()[0];
     }

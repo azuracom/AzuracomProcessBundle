@@ -2,17 +2,18 @@
 
 namespace Azuracom\ProcessBundle\Handler;
 
-use Azuracom\ProcessBundle\Model\Process;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
 
-class HandlerProvider
+class HandlerProvider implements HandlerProviderInterface
 {
     /** @var HandlerInterface[] */
     private $handlers = [];
 
-    public function getHandler(Process $process): ?HandlerInterface
+    public function getHandler(ProcessInterface $process): ?HandlerInterface
     {
         foreach ($this->handlers as $handler) {
             if ($handler->isEligible($process)) {
+                $handler->configure();
                 return $handler;
             }
         }
@@ -20,8 +21,10 @@ class HandlerProvider
         return null;
     }
 
-    public function addHandler(HandlerInterface $handler)
+    public function addHandler(HandlerInterface $handler) : HandlerProviderInterface
     {
         $this->handlers[] = $handler;
+
+        return $this;
     }
 }

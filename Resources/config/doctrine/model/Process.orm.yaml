@@ -1,0 +1,56 @@
+Azuracom\ProcessBundle\Model\Process:
+    type: mappedSuperclass
+    table: process
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        type:
+            type: string
+            length: 255
+
+        status:
+            type: string
+            length: 255 
+            nullable: true             
+
+        uniqueId:
+            column: unique_id
+            type: string
+            length: 255 
+            nullable: true
+
+        originalFilename:
+            column: original_filename
+            type: string
+            length: 255  
+            nullable: true      
+            
+        filename:
+            type: string
+            length: 255 
+            nullable: true 
+
+        startedAt:
+            type: datetime
+            nullable: true        
+
+        endedAt:
+            type: datetime   
+            nullable: true     
+            
+        resolved:
+            type: boolean   
+
+        createdAt:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: create
+        updatedAt:
+            type: datetime
+            gedmo:
+                timestampable:
+                    on: update

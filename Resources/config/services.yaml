@@ -1,4 +1,22 @@
 services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
 
+    #services
+    azuracom_process.handler_provider:
+        class: Azuracom\ProcessBundle\Handler\HandlerProvider
+        public: true
+    
+    azuracom_process.helper:
+        class: Azuracom\ProcessBundle\Helper\ProcessHelper
+        public: true
+
+
+    #aliases
+    Azuracom\ProcessBundle\Handler\HandlerProviderInterface: '@azuracom_process.handler_provider'   
+    Azuracom\ProcessBundle\Helper\ProcessHelperInterface: '@azuracom_process.helper'       
+        
 parameters:
     azuracom_process.types: []

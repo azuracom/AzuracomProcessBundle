@@ -2,141 +2,90 @@
 
 namespace Azuracom\ProcessBundle\Model;
 
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
-use Gedmo\Mapping\Annotation as Gedmo;
 use Doctrine\Common\Collections\ArrayCollection;
+use Sylius\Component\Resource\Model\ResourceInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Process
- *
- * @ORM\Table(name="process")
- * @ORM\Entity()
  * @Vich\Uploadable
  */
-class Process
+class Process implements ResourceInterface, ProcessInterface
 {
-    const STATUS_NEW = "new";
-    const STATUS_HAS_WARNING = 'has_warning';
-    const STATUS_HAS_ERROR = 'has_error';
-    const STATUS_SUCCEDED = 'succeded';
-
     /**
      * @var int
-     *
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
      */
     protected $id;
 
-
     /**
      * @var string
-     *
-     * @ORM\Column(name="type", type="string", length=100)
-     * @Assert\Length(max = 100)
      */
     protected $type;
 
     /**
      * @var string
-     *
-     * @ORM\Column(name="unique_id", type="string", length=255)
-     * @Assert\Length(max = 255)
      */
-    protected $uniqueId;    
+    protected $uniqueId;
 
     /**
      * @var File
      *
-     * @Vich\UploadableField(mapping="process", fileNameProperty="fileName")
-     * @Assert\File(maxSize="2M")
+     * @Vich\UploadableField(mapping="process", fileNameProperty="filename")
      */
     protected $file;
 
+    /**
+     * @var string
+     */
+    protected $originalFilename;
 
     /**
      * @var string
-     *
-     * @ORM\Column(name="original_file_name", type="string", length=255,nullable=true)
-     * @Assert\Length(max = 255)
      */
-    protected $originalFileName;
-
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="file_name", type="string", length=255,nullable=true)
-     * @Assert\Length(max = 255)
-     */
-    protected $fileName;
+    protected $filename;
 
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="started_at", type="datetime", nullable=true)
      */
     protected $startedAt;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="ended_at", type="datetime", nullable=true)
      */
     protected $endedAt;
 
     /**
      * @var string
-     *
-     * @ORM\Column(name="status", type="string", length=255)
-     * @Assert\Length(max = 255)
      */
     protected $status = self::STATUS_NEW;
 
     /**
      * @var boolean
-     *
-     * @ORM\Column(name="resolved", type="boolean")
      */
     protected $resolved = true;
 
     /**
      * @var array
-     *
-     * @ORM\Column(name="options", type="array")
      */
     protected $options = array();
 
-    /**
-     * @ORM\ManyToOne(targetEntity="User")
-     * @ORM\JoinColumn(name="user_id", referencedColumnName="id")
-     */
+
     protected $user;
 
-    /**
-     * @ORM\OneToMany(targetEntity="ProcessResourceTag", mappedBy="process",cascade={"persist"},orphanRemoval=true)
-     */
+
     protected $resourceTags;
 
     /**
      * @var \DateTime $created
-     *
-     * @Gedmo\Timestampable(on="create")
-     * @ORM\Column(name="created_at",type="datetime",nullable=true)
      */
     protected $createdAt;
 
     /**
      * @var \DateTime $updated
-     *
-     * @Gedmo\Timestampable(on="update")
-     * @ORM\Column(name="updated_at",type="datetime",nullable=true)
      */
     protected $updatedAt;
 
@@ -156,12 +105,12 @@ class Process
         return $this->id ? $this->getTypeName() . " - " . $this->id : "Nouveau processus";
     }
 
-    public function generateUniqueId()
+    public function generateUniqueId(): void
     {
         $this->uniqueId = uniqid();
     }
 
-    public function addRessourceTagByArray($value)
+    public function addRessourceTagByArray($value): ProcessInterface
     {
         $resourceTag = new ProcessResourceTag();
         foreach ($value as $attr => $attrValue) {
@@ -170,12 +119,14 @@ class Process
 
         $resourceTag->setProcess($this);
         $this->resourceTags->add($resourceTag);
+
+        return $this;
     }
 
-    public static function createResourceTage($resource, string $comment = null)
+    public static function createResourceTage($resource, string $comment = null): ?ProcessResourceTagInterface
     {
         if (!is_object($resource)) {
-            return;
+            return null;
         }
 
         $resourceTag = new ProcessResourceTag();
@@ -204,79 +155,48 @@ class Process
     }
 
 
-    public function addRessourceTag($resource, string $comment = null)
+    public function addRessourceTag($resource, string $comment = null): ProcessInterface
     {
         $resourceTag = $this->createResourceTage($resource, $comment);
         $resourceTag->setProcess($this);
 
         $this->resourceTags->add($resourceTag);
+
+        return $this;
     }
 
-    public function startProcess()
+    public function startProcess(): ProcessInterface
     {
         $this->startedAt = new \DateTime();
         $this->resetRessourceTags();
+
+        return $this;
     }
 
-    public function endProcess()
+    public function endProcess(): ProcessInterface
     {
         if ($this->status == self::STATUS_NEW) {
             $this->status = self::STATUS_SUCCEDED;
         }
 
         $this->endedAt = new \DateTime();
+
+        return $this;
     }
 
-    public function resetRessourceTags()
+    public function resetRessourceTags(): ProcessInterface
     {
         $this->resourceTags = new ArrayCollection();
+
+        return $this;
     }
 
-
-    public static function getConstants()
-    {
-        $oClass = new \ReflectionClass(__CLASS__);
-        return $oClass->getConstants();
-    }
-
-    public static function getStatusList()
-    {
-        $list = array();
-        foreach (self::getConstants() as $constName => $constValue) {
-            if (preg_match("#^STATUS_#", $constName)) {
-                $list[$constValue] = self::convertStatusToString($constValue);
-            }
-        }
-        return $list;
-    }
-
-    public function getStatusName()
-    {
-        return self::convertStatusToString($this->status);
-    }
-
-    public static function convertStatusToString($status = null)
-    {
-        switch ($status) {
-            case self::STATUS_NEW:
-                return "En attente";
-            case self::STATUS_HAS_WARNING:
-                return "Avertissement";
-            case self::STATUS_HAS_ERROR:
-                return "Erreur";
-            case self::STATUS_SUCCEDED:
-                return "Réussi";
-            default:
-                return "Others";
-        }
-    }
-
-    public function getStatusColor()
+    public function getStatusColor(): string
     {
         return self::getStatusColorStatic($this->status);
     }
 
-    public static function getStatusColorStatic($status)
+    public static function getStatusColorStatic(string $status): string
     {
         switch ($status) {
             case self::STATUS_HAS_ERROR:
@@ -311,7 +231,7 @@ class Process
      *
      * @return Process
      */
-    public function setType($type)
+    public function setType($type): ProcessInterface
     {
         $this->type = $type;
 
@@ -323,7 +243,7 @@ class Process
      *
      * @return string
      */
-    public function getType()
+    public function getType(): string
     {
         return $this->type;
     }
@@ -336,7 +256,7 @@ class Process
      *
      * @return Process
      */
-    public function setUser(UserInterface $user = null)
+    public function setUser(UserInterface $user = null): ProcessInterface
     {
         $this->user = $user;
 
@@ -348,7 +268,7 @@ class Process
      *
      * @return UserInterface
      */
-    public function getUser()
+    public function getUser(): UserInterface
     {
         return $this->user;
     }
@@ -364,7 +284,7 @@ class Process
      *
      * @return Process
      */
-    public function setFile(File $file = null)
+    public function setFile(File $file = null): ProcessInterface
     {
         $this->file = $file;
 
@@ -374,7 +294,7 @@ class Process
             $this->updatedAt = new \DateTimeImmutable();
 
             if ($file instanceof UploadedFile) {
-                $this->originalFileName = $file->getClientOriginalName();
+                $this->originalFilename = $file->getClientOriginalName();
             }
         }
 
@@ -384,33 +304,33 @@ class Process
     /**
      * @return File|null
      */
-    public function getFile()
+    public function getFile(): ?File
     {
         return $this->file;
     }
 
     /**
-     * Set fileName
+     * Set filename
      *
-     * @param string $fileName
+     * @param string $filename
      *
      * @return Process
      */
-    public function setFileName($fileName)
+    public function setFilename($filename): ProcessInterface
     {
-        $this->fileName = $fileName;
+        $this->filename = $filename;
 
         return $this;
     }
 
     /**
-     * Get fileName
+     * Get filename
      *
      * @return string
      */
-    public function getFileName()
+    public function getFilename(): ?string
     {
-        return $this->fileName;
+        return $this->filename;
     }
 
 
@@ -421,7 +341,7 @@ class Process
      *
      * @return Process
      */
-    public function setCreatedAt($createdAt)
+    public function setCreatedAt(?\DateTime $createdAt): ProcessInterface
     {
         $this->createdAt = $createdAt;
 
@@ -433,7 +353,7 @@ class Process
      *
      * @return \DateTime
      */
-    public function getCreatedAt()
+    public function getCreatedAt(): ?\DateTime
     {
         return $this->createdAt;
     }
@@ -445,7 +365,7 @@ class Process
      *
      * @return Process
      */
-    public function setUpdatedAt($updatedAt)
+    public function setUpdatedAt(?\DateTime $updatedAt): ProcessInterface
     {
         $this->updatedAt = $updatedAt;
 
@@ -457,7 +377,7 @@ class Process
      *
      * @return \DateTime
      */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
     }
@@ -469,7 +389,7 @@ class Process
      *
      * @return Process
      */
-    public function setOptions($options)
+    public function setOptions(array $options): ProcessInterface
     {
         $this->options = $options;
 
@@ -481,7 +401,7 @@ class Process
      *
      * @return array
      */
-    public function getOptions()
+    public function getOptions(): array
     {
         if (!is_array($this->options)) {
             $this->options = array();
@@ -490,14 +410,16 @@ class Process
         return $this->options;
     }
 
-    public function setOption($key, $value)
+    public function setOption(string $key, $value): ProcessInterface
     {
         if (is_string($key) && is_string($value)) {
             $this->options[$key] = $value;
         }
+
+        return $this;
     }
 
-    public function getOption($key)
+    public function getOption(string $key)
     {
         if (isset($this->getOptions()[$key])) {
             return $this->getOptions()[$key];
@@ -506,32 +428,32 @@ class Process
     }
 
     /**
-     * Set originalFileName.
+     * Set originalFilename.
      *
-     * @param string|null $originalFileName
+     * @param string|null $originalFilename
      *
      * @return Process
      */
-    public function setOriginalFileName($originalFileName = null)
+    public function setOriginalFilename(?string $originalFilename = null): ProcessInterface
     {
-        $this->originalFileName = $originalFileName;
+        $this->originalFilename = $originalFilename;
 
         return $this;
     }
 
     /**
-     * Get originalFileName.
+     * Get originalFilename.
      *
      * @return string|null
      */
-    public function getOriginalFileName()
+    public function getOriginalFilename(): ?string
     {
-        return $this->originalFileName;
+        return $this->originalFilename;
     }
     /**
      * @return \DateTime
      */
-    public function getStartedAt()
+    public function getStartedAt(): ?\DateTime
     {
         return $this->startedAt;
     }
@@ -539,15 +461,17 @@ class Process
     /**
      * @param \DateTime $startedAt
      */
-    public function setStartedAt($startedAt)
+    public function setStartedAt(?\DateTime $startedAt): ProcessInterface
     {
         $this->startedAt = $startedAt;
+
+        return $this;
     }
 
     /**
      * @return \DateTime
      */
-    public function getEndedAt()
+    public function getEndedAt(): ?\DateTime
     {
         return $this->endedAt;
     }
@@ -555,15 +479,17 @@ class Process
     /**
      * @param \DateTime $endedAt
      */
-    public function setEndedAt($endedAt)
+    public function setEndedAt(?\DateTime $endedAt): ProcessInterface
     {
         $this->endedAt = $endedAt;
+
+        return $this;
     }
 
     /**
      * @return string
      */
-    public function getStatus()
+    public function getStatus(): string
     {
         return $this->status;
     }
@@ -571,14 +497,16 @@ class Process
     /**
      * @param string $status
      */
-    public function setStatus($status)
+    public function setStatus(string $status): ProcessInterface
     {
         $this->status = $status;
+
+        return $this;
     }
     /**
      * @return boolean
      */
-    public function isResolved()
+    public function isResolved(): bool
     {
         return $this->resolved;
     }
@@ -586,17 +514,19 @@ class Process
     /**
      * @param boolean $resolved
      */
-    public function setResolved($resolved)
+    public function setResolved(bool $resolved): ProcessInterface
     {
         $this->resolved = $resolved;
+
+        return $this;
     }
 
     /**
      * Get the value of uniqueId
      *
      * @return  string
-     */ 
-    public function getUniqueId()
+     */
+    public function getUniqueId(): ?string
     {
         return $this->uniqueId;
     }
@@ -607,8 +537,8 @@ class Process
      * @param  string  $uniqueId
      *
      * @return  self
-     */ 
-    public function setUniqueId(string $uniqueId)
+     */
+    public function setUniqueId(?string $uniqueId): ProcessInterface
     {
         $this->uniqueId = $uniqueId;
 

@@ -2,74 +2,44 @@
 
 namespace Azuracom\ProcessBundle\Model;
 
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
+use Sylius\Component\Resource\Model\ResourceInterface;
 
-/**
- * ProcessResourceTag
- *
- * @ORM\Table(name="process_resource_tag")
- * @ORM\Entity()
- */
-class ProcessResourceTag
+class ProcessResourceTag implements ResourceInterface, ProcessResourceTagInterface
 {
-
     /**
      * @var int
-     *
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
      */
     protected $id;
 
-
     /**
      * @var string
-     *
-     * @ORM\Column(name="class_name", type="string", length=255)
-     * @Assert\Length(max = 255)
      */
     protected $className;
 
     /**
      * @var string
-     *
-     * @ORM\Column(name="resource_id", type="string", length=255,nullable=true)
-     * @Assert\Length(max = 255)
      */
     protected $resourceId;
 
     /**
      * @var string
-     *
-     * @ORM\Column(name="resource_code", type="string", length=255,nullable=true)
-     * @Assert\Length(max = 255)
      */
     protected $resourceCode;
 
-
     /**
      * @var string
-     *
-     * @ORM\Column(name="comment", type="text",nullable=true)
      */
     protected $comment;
 
-
     /**
      * @var Process
-     * 
-     * @ORM\ManyToOne(targetEntity="Process",inversedBy="resourceTags")
-     * @ORM\JoinColumn(name="process_id", referencedColumnName="id")
      */
     protected $process;
-
 
     /**
      * @return string
      */
-    public function getClassName()
+    public function getClassName() : string
     {
         return $this->className;
     }
@@ -77,15 +47,17 @@ class ProcessResourceTag
     /**
      * @param string $className
      */
-    public function setClassName($className)
+    public function setClassName($className) : ProcessResourceTagInterface
     {
         $this->className = $className;
+        
+        return $this;
     }
 
     /**
      * @return string
      */
-    public function getResourceId()
+    public function getResourceId() : string
     {
         return $this->resourceId;
     }
@@ -93,15 +65,17 @@ class ProcessResourceTag
     /**
      * @param string $resourceId
      */
-    public function setResourceId($resourceId)
+    public function setResourceId(string $resourceId) : ProcessResourceTagInterface
     {
         $this->resourceId = $resourceId;
+
+        return $this;
     }
 
     /**
      * @return string
      */
-    public function getResourceCode()
+    public function getResourceCode() :?string
     {
         return $this->resourceCode;
     }
@@ -109,15 +83,17 @@ class ProcessResourceTag
     /**
      * @param string $resourceCode
      */
-    public function setResourceCode($resourceCode)
+    public function setResourceCode(?string $resourceCode) : ProcessResourceTagInterface
     {
         $this->resourceCode = $resourceCode;
+
+        return $this;
     }
 
     /**
      * @return string
      */
-    public function getComment()
+    public function getComment() : string
     {
         return $this->comment;
     }
@@ -125,25 +101,24 @@ class ProcessResourceTag
     /**
      * @param string $comment
      */
-    public function setComment($comment)
+    public function setComment(?string $comment) : ProcessResourceTagInterface
     {
         $this->comment = $comment;
+
+        return $this;
     }
 
-    /**
-     * @return \Azuracom\ProcessBundle\Model\Process
-     */
-    public function getProcess()
+
+    public function getProcess() : ProcessInterface
     {
         return $this->process;
     }
 
-    /**
-     * @param \Azuracom\ProcessBundle\Model\Process $process
-     */
-    public function setProcess($process)
+    public function setProcess(ProcessInterface $process) : ProcessResourceTagInterface
     {
         $this->process = $process;
+
+        return $this;
     }
 
     /**
