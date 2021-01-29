@@ -5,6 +5,7 @@ namespace Azuracom\ProcessBundle\Factory;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 class ProcessFactory implements FactoryInterface
 {
@@ -25,7 +26,9 @@ class ProcessFactory implements FactoryInterface
     {
         /** @var ProcessInterface  */
         $process = $this->factory->createNew();
-        $user = $this->tokenStorage->getToken() ? $this->tokenStorage->getToken()->getUser() : null;
+        $user = $this->tokenStorage->getToken()->getUser() instanceof UserInterface ?
+            $this->tokenStorage->getToken()->getUser() :
+            null;
         $process->setUser($user);
         return $process;
     }
