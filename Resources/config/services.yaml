@@ -15,12 +15,38 @@ services:
     azuracom_process.monolog.process_handler:
         class: Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler
 
+
+
+
     #private services
+    #Listeners
     Azuracom\ProcessBundle\EventListener\ProcessSubscriber:
         public: false
         tags:
-            - { name: 'doctrine.event_subscriber' }     
+            - { name: 'doctrine.event_subscriber' }  
 
+    Azuracom\ProcessBundle\EventListener\ORMUserMappingSubscriber:
+        arguments: ['@sylius.resource_registry',null]
+        public: false
+        tags:
+            - { name: 'doctrine.event_subscriber' , priority: 8193 }              
+            
+            
+    azuracom_process.custom_factory.process_resource_tag:
+        class: Azuracom\ProcessBundle\Factory\ProcessResourceTagFactory
+        decorates: 'azuracom_process.factory.process_resource_tag'
+        decoration_priority: 256
+        public: false
+        arguments: ['@azuracom_process.custom_factory.process_resource_tag.inner']     
+        
+    azuracom_process.custom_factory.process:
+        class: Azuracom\ProcessBundle\Factory\ProcessFactory
+        decorates: 'azuracom_process.factory.process'
+        decoration_priority: 256
+        public: false
+        arguments: ['@azuracom_process.custom_factory.process.inner','@security.token_storage']            
+
+    #commands
     Azuracom\ProcessBundle\Command\ClearProcessCommand:
         public: false
         tags:

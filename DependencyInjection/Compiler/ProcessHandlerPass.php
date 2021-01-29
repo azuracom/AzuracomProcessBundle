@@ -21,6 +21,13 @@ class ProcessHandlerPass implements CompilerPassInterface
             $definition->addMethodCall('addHandler', [new Reference($id)]);
 
             $handlerDefinition = $container->findDefinition($id);
+
+            //add helper to all handler
+            if ($container->has('azuracom_process.helper')) {
+                $handlerDefinition->addMethodCall('setHelper', [new Reference('azuracom_process.helper')]);
+            }
+
+            //set available types in parameter
             $key = call_user_func($handlerDefinition->getClass() . '::getType');
             $label = call_user_func($handlerDefinition->getClass() . '::getTypeLabel');
             $types[$key] =  $label;

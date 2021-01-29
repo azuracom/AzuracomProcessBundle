@@ -60,4 +60,11 @@ Azuracom\ProcessBundle\Model\Process:
             targetEntity: Azuracom\ProcessBundle\Model\ProcessResourceTagInterface
             mappedBy: process  
             cascade: ['persist']
-            orphanRemoval: true                  
+            orphanRemoval: true     
+
+    manyToOne:
+        user:
+            targetEntity: Symfony\Component\Security\Core\User\UserInterface
+            joinColumn:
+                name: user_id
+                referencedColumnName: id                         

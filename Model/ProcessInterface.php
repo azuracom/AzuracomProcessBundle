@@ -15,29 +15,27 @@ interface ProcessInterface
     const STATUS_WAITING_DEFERRED = 'waiting_deferred';
 
 
-    public function generateUniqueId() : void;
+    public function generateUniqueId(): void;
 
-    public function addRessourceTagByArray($value) :self;
+    public function addRessourceTag(ProcessResourceTagInterface $resourceTag): self;
 
-    public static function createResourceTage($resource, string $comment = null) : ?ProcessResourceTagInterface;
-
-    public function addRessourceTag($resource, string $comment = null);
-
-    public function startProcess() :self;
-
-    public function endProcess():self;
-
-    public function resetRessourceTags():self;
+    public function resetRessourceTags(): self;
 
     public function getResourceTags();
 
-    public function getStatusColor() :string;
+    public function removeResourceTag(ProcessResourceTagInterface $resourceTag): ProcessInterface;
 
-    public static function getStatusColorStatic(string $status) :string;
+    public function startProcess(): self;
+
+    public function endProcess(): self;
+
+    public function getStatusColor(): string;
+
+    public static function getStatusColorStatic(string $status): string;
 
     public function getId();
 
-    public function setType(string $type) : self;
+    public function setType(string $type): self;
 
     public function getType(): string;
 
@@ -49,9 +47,9 @@ interface ProcessInterface
 
     public function getFile(): ?File;
 
-    public function setFilename(?string $filename) : self;
+    public function setFilename(?string $filename): self;
 
-    public function getFilename():?string;
+    public function getFilename(): ?string;
 
     public function setCreatedAt(?DateTime $createdAt): self;
 
@@ -63,15 +61,15 @@ interface ProcessInterface
 
     public function setOptions(array $options): self;
 
-    public function getOptions() : array;
+    public function getOptions(): array;
 
-    public function setOption(string $key, $value) : self;
+    public function setOption(string $key, $value): self;
 
     public function getOption(string $key);
 
     public function setOriginalFilename(string $originalFilename = null): self;
 
-    public function getOriginalFilename() :?string;
+    public function getOriginalFilename(): ?string;
 
     public function getStartedAt(): ?DateTime;
 
@@ -79,7 +77,7 @@ interface ProcessInterface
 
     public function getEndedAt(): ?DateTime;
 
-    public function setEndedAt(?DateTime $endedAt) : self;
+    public function setEndedAt(?DateTime $endedAt): self;
 
     public function getStatus(): string;
 
@@ -89,7 +87,7 @@ interface ProcessInterface
 
     public function setResolved(bool $resolved): self;
 
-    public function getUniqueId() :?string;
+    public function getUniqueId(): ?string;
 
-    public function setUniqueId(?string $uniqueId) : self;
+    public function setUniqueId(?string $uniqueId): self;
 }

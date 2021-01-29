@@ -2,6 +2,7 @@
 
 namespace Azuracom\ProcessBundle\DependencyInjection;
 
+use Azuracom\ProcessBundle\EventListener\ORMUserMappingSubscriber;
 use Symfony\Component\Config\FileLocator;
 use Azuracom\ProcessBundle\Handler\HandlerInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
@@ -14,16 +15,18 @@ class AzuracomProcessExtension extends AbstractResourceExtension
     public function load(array $config, ContainerBuilder $container)
     {
         $config = $this->processConfiguration($this->getConfiguration([], $container), $config);
-        
         $loader = new YamlFileLoader($container, new FileLocator(dirname(__DIR__) . '/Resources/config'));
         $loader->load('services.yaml');
         $loader->load('admin.yaml');
 
+        //register sylius resource
         $this->registerResources('azuracom_process', $config['driver'], $config['resources'], $container);
 
+        //add tag to all class that implements HandlerInterface
         $container->registerForAutoconfiguration(HandlerInterface::class)
             ->addTag("azuracom_process.handler");
 
+        //add status in parameter
         $oClass = new \ReflectionClass(ProcessInterface::class);
         $status = [];
         foreach($oClass->getConstants() as $constName => $value){
@@ -33,6 +36,13 @@ class AzuracomProcessExtension extends AbstractResourceExtension
         }
         
         $container->setParameter('azuracom_process.status', $status);
+
+
+        //set ORMUserMappingSubscriber userClassName argument
+        if($container->has(ORMUserMappingSubscriber::class)){
+            $definition = $container->getDefinition(ORMUserMappingSubscriber::class);
+            $definition->replaceArgument(1,$config['user_class']);
+        }
     }
 
     protected function registerResources(

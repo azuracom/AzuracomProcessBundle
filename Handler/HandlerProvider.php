@@ -13,6 +13,7 @@ class HandlerProvider implements HandlerProviderInterface
     {
         foreach ($this->handlers as $handler) {
             if ($handler->isEligible($process)) {
+                $handler->setProcess($process);
                 $handler->configure();
                 return $handler;
             }

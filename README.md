@@ -85,30 +85,26 @@ Note that the handler has to implements Azuracom\ProcessBundle\Handler\HandlerIn
 
 namespace App\Process;
 
-use Azuracom\ProcessBundle\Handler\HandlerInterface;
-use Azuracom\ProcessBundle\Helper\ProcessHelperInterface;
+use Azuracom\ProcessBundle\Handler\AbstractHandler;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Product;
 
-class ImportProductHandler implements HandlerInterface
+class ImportProductHandler extends AbstractHandler
 {
-    /** @var ProcessHelperInterface */
-    protected $helper;
 
     /** @var EntityManagerInterface */
     protected $em;
 
-    public function __construct(ProcessHelperInterface $helper,EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em)
     {
-        $this->helper = $helper;   
+        $this->em = $em;   
     }
     
-    public function handle(ProcessInterface $process)
+    public function handle()
     {
         //init stuff
-        $process->startProcess();
-        $this->helper->setSubject($process);
+        $this->process->startProcess();
         
         //some sample with csv to datavase
         // ref | name | stock
@@ -138,22 +134,7 @@ class ImportProductHandler implements HandlerInterface
         }
 
         //tag the process as ended
-        $process->endProcess();
-    }
-
-    public function isEligible(ProcessInterface $process): bool
-    {
-        return $process->getType() == self::getType();
-    }
-    
-    public function configure(): void
-    {
-
-    }
-
-    public static function getType() : string
-    {
-        return 'import_product';
+        $this->process->endProcess();
     }
 
     public static function getTypeLabel() :string
@@ -192,7 +173,7 @@ class ProductController extends AbstractController
         $process->setType(ImportProductHandler::getType());
         
         $handler = $provider->getHandler($process);
-        $handler->handle($process);
+        $handler->handle();
         
         $em->persist($process);
         $em->flush();
@@ -215,64 +196,23 @@ sonata_admin:
 Advanced usage
 ============
 
-## Customize
+## Configuration
 
-Models implements sylius resource and can be customized in config
 
 ```yaml
 # config/packages/azuracom_process.yaml
 azuracom_process:
+    user_class: App\Entity\User #is set use processFactory to automatically set logged user to process, default value is null
+    #overwrite resource, check at SyliusResourceBundle for mor information
     resources:
         process:
             classes:
-                model:                Azuracom\ProcessBundle\Model\Process
-                repository:           ~
-                factory:              Sylius\Component\Resource\Factory\Factory
+                model: Azuracom\ProcessBundle\Model\Process
                 admin:                Azuracom\ProcessBundle\Admin\ProcessAdmin
-```
-
-## Link user and process
-
-
-```yaml
-# config/packages/azuracom_process.yaml
-azuracom_process:
-    resources:
-        process:
+        process_resource_tag:
             classes:
-                model: App\Entity\Process
-
-``` 
-
-```php
-//src/Entity/Process.php
-
-namespace App\Entity;
-
-use Azuracom\ProcessBundle\Model\Process as ModelProcess;
-use Doctrine\ORM\Mapping as ORM;
-
-/**
- * @ORM\Entity
- * @ORM\Table(name="process")
- */
-class Process extends ModelProcess
-{
-    /**
-     * @ORM\ManyToOne(targetEntity="User")
-     * @ORM\JoinColumn(name="user_id", referencedColumnName="id")
-     */
-    protected $user;
-}
-``` 
-
-
-TODO: autoconfigure this section with something like
-
-```yaml
-# config/packages/azuracom_process.yaml
-azuracom_process:
-    user_class: App\Entity\User
+                model: Azuracom\ProcessBundle\Model\ProcessResourceTag
+                admin: Azuracom\ProcessBundle\Admin\ProcessResourceTagAdmin                
 ```
 
 

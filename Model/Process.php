@@ -109,60 +109,6 @@ class Process implements ResourceInterface, ProcessInterface
         $this->uniqueId = uniqid();
     }
 
-    public function addRessourceTagByArray($value): ProcessInterface
-    {
-        $resourceTag = new ProcessResourceTag();
-        foreach ($value as $attr => $attrValue) {
-            $resourceTag->{"set$attr"}($attrValue);
-        }
-
-        $resourceTag->setProcess($this);
-        $this->resourceTags->add($resourceTag);
-
-        return $this;
-    }
-
-    public static function createResourceTage($resource, string $comment = null): ?ProcessResourceTagInterface
-    {
-        if (!is_object($resource)) {
-            return null;
-        }
-
-        $resourceTag = new ProcessResourceTag();
-
-        $className = str_replace('\\', '', get_class($resource));
-        //proxies specif
-        if (preg_match("#Proxies__CG__#", $className)) {
-            $className = str_replace('Proxies__CG__', '', $className);
-        }
-        $resourceTag->setClassName($className);
-        $resourceTag->setComment($comment);
-
-        if (method_exists($resource, 'getId')) {
-            $resourceTag->setResourceId($resource->getId());
-        }
-
-        if (method_exists($resource, 'getCode')) {
-            $resourceTag->setResourceCode($resource->getCode());
-        }
-
-        if (property_exists($resource, 'Id')) {
-            $resourceTag->setResourceId($resource->Id);
-        }
-
-        return $resourceTag;
-    }
-
-
-    public function addRessourceTag($resource, string $comment = null): ProcessInterface
-    {
-        $resourceTag = $this->createResourceTage($resource, $comment);
-        $resourceTag->setProcess($this);
-
-        $this->resourceTags->add($resourceTag);
-
-        return $this;
-    }
 
     public function startProcess(): ProcessInterface
     {
@@ -193,6 +139,20 @@ class Process implements ResourceInterface, ProcessInterface
     public function getResourceTags()
     {
         return $this->resourceTags;
+    }
+
+    public function addRessourceTag(ProcessResourceTagInterface $resourceTag): ProcessInterface
+    {
+        $this->resourceTags->add($resourceTag);
+
+        return $this;
+    }
+
+    public function removeResourceTag(ProcessResourceTagInterface $resourceTag): ProcessInterface
+    {
+        $this->resourceTags->remove($resourceTag);
+
+        return $this;
     }
 
     public function getStatusColor(): string

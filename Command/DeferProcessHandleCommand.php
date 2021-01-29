@@ -72,7 +72,7 @@ class DeferProcessHandleCommand extends Command
 
         foreach ($processes as $process) {
             $handler = $this->provider->getHandler($process);
-            $handler->handle($process);
+            $handler->handle();
         }
 
         $output->write("Save...");
