@@ -26,7 +26,7 @@ class ProcessFactory implements FactoryInterface
     {
         /** @var ProcessInterface  */
         $process = $this->factory->createNew();
-        $user = $this->tokenStorage->getToken()->getUser() instanceof UserInterface ?
+        $user = $this->tokenStorage->getToken() && $this->tokenStorage->getToken()->getUser() instanceof UserInterface ?
             $this->tokenStorage->getToken()->getUser() :
             null;
         $process->setUser($user);

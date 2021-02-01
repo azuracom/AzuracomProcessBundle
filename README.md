@@ -48,8 +48,7 @@ return [
 ];
 ```
 
-Configure
-in the `config/packages/monolog.yaml` file of your project:
+Configure monolog in the `config/packages/monolog.yaml` file of your project:
 
 ```yaml
 # config/packages/monolog.yaml
@@ -62,7 +61,7 @@ monolog:
             channels: [process]
 ```
 
-in the `config/packages/stof_doctrine_extensions.yaml` file of your project:
+Configure doctrine extensions in the `config/packages/stof_doctrine_extensions.yaml` file of your project:
 
 ```yaml
 # config/packages/stof_doctrine_extensions.yam
@@ -72,6 +71,19 @@ stof_doctrine_extensions:
             timestampable: true    
 ```
 
+Configure vich uploader in the `config/packages/vich_uploader.yaml` file of your project:
+
+```yaml
+vich_uploader:
+    db_driver: orm
+    mappings:
+        process:
+            uri_prefix: /files/process
+            upload_destination: '%kernel.project_dir%/public/files/process'
+            inject_on_load:     false
+            delete_on_remove:   true
+            namer: vich_uploader.namer_uniqid  
+```             
 
 Usage
 ============
@@ -101,7 +113,7 @@ class ImportProductHandler extends AbstractHandler
         $this->em = $em;   
     }
     
-    public function handle()
+    public function handle(): void
     {
         //init stuff
         $this->process->startProcess();
