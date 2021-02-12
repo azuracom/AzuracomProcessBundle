@@ -5,6 +5,7 @@ namespace Azuracom\ProcessBundle\Model;
 use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Query;
 use Sylius\Component\Resource\Model\ResourceInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -89,9 +90,14 @@ class Process implements ResourceInterface, ProcessInterface
      */
     protected $updatedAt;
 
+    /**
+     * @var Query[]
+     */
+    protected $queries = [];
+
 
     public function __construct($type = null, $autoStart = true)
-    {
+    {        
         $this->resourceTags = new ArrayCollection();        
         $this->type = $type;
         if ($autoStart) {
@@ -507,6 +513,49 @@ class Process implements ResourceInterface, ProcessInterface
     public function setUniqueId(?string $uniqueId): ProcessInterface
     {
         $this->uniqueId = $uniqueId;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of queries
+     *
+     * @return  Query[]
+     */ 
+    public function getQueries()
+    {
+        return $this->queries;
+    }
+
+    /**
+     * Set the value of queries
+     *
+     * @param  Query[]  $queries
+     *
+     * @return  self
+     */ 
+    public function setQueries($queries) : ProcessInterface
+    {
+        $this->queries = $queries;
+
+        return $this;
+    }
+
+    public function addQuery(Query $query) : ProcessInterface
+    {
+        $this->queries[] = $query;
+
+        return $this;
+    }
+
+    public function removeQuery(Query $query) : ProcessInterface
+    {
+        foreach ($this->queries as $key => $tmp) {
+            if($tmp === $query){
+                unset($this->queries[$key]);
+                break;
+            }
+        }
 
         return $this;
     }

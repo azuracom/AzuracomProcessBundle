@@ -5,6 +5,7 @@ namespace Azuracom\ProcessBundle\Model;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Security\Core\User\UserInterface;
 use DateTime;
+use Doctrine\ORM\Query;
 
 interface ProcessInterface
 {
@@ -90,4 +91,15 @@ interface ProcessInterface
     public function getUniqueId(): ?string;
 
     public function setUniqueId(?string $uniqueId): self;
+
+    /**
+     * @return Query[]
+     */
+    public function getQueries();
+
+    public function setQueries($queries): self;
+
+    public function addQuery(Query $query): self;
+
+    public function removeQuery(Query $query): self;
 }
