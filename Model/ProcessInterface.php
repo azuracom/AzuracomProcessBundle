@@ -14,6 +14,7 @@ interface ProcessInterface
     const STATUS_HAS_ERROR = 'has_error';
     const STATUS_SUCCEDED = 'succeded';
     const STATUS_WAITING_DEFERRED = 'waiting_deferred';
+    const STATUS_IN_PROGRESS = 'in_progress';
 
 
     public function generateUniqueId(): void;

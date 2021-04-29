@@ -55,6 +55,7 @@ class DeferProcessHandleCommand extends Command
         $start = new \DateTime($input->getOption('date'));
         $end = clone $start;
 
+        /** @var ProcessInterface[] */
         $processes = $this->repository
             ->createQueryBuilder('p')
             ->where("p.createdAt >= :start AND p.createdAt <= :end")
@@ -71,6 +72,11 @@ class DeferProcessHandleCommand extends Command
         }
 
         foreach ($processes as $process) {
+            $output->writeln(sprintf("Start handle #%s of type %s",$process->getId(),$process->getType()));
+            //set process in progress to avoid conflict when several commands are running at the same time
+            $process->setStatus(ProcessInterface::STATUS_IN_PROGRESS);
+            $this->manager->flush();
+
             $handler = $this->provider->getHandler($process);
             $handler->handle();
         }
