@@ -110,6 +110,15 @@ class Process implements ResourceInterface, ProcessInterface
         return $this->id ? $this->getType() . " - " . $this->id : "Nouveau processus";
     }
 
+    public function getExecutionDiff()
+    {
+        if(!$this->startedAt || ! $this->endedAt){
+            return null;
+        }
+
+        return $this->startedAt->diff($this->endedAt);
+    }
+
     public function generateUniqueId(): void
     {
         $this->uniqueId = uniqid();

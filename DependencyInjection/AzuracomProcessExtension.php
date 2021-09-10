@@ -43,6 +43,11 @@ class AzuracomProcessExtension extends AbstractResourceExtension
             $definition = $container->getDefinition(ORMUserMappingSubscriber::class);
             $definition->replaceArgument(1,$config['user_class']);
         }
+
+
+        //setUserClass to process admin
+        $definition = $container->getDefinition("azuracom_process.admin.process");
+        $definition->addMethodCall('setUserClass',[$config['user_class']]);
     }
 
     protected function registerResources(

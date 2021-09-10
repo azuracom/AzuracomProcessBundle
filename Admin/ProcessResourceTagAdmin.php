@@ -4,14 +4,13 @@ namespace Azuracom\ProcessBundle\Admin;
 
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Datagrid\DatagridMapper;
-use Sonata\AdminBundle\Route\RouteCollection;
 use Sonata\AdminBundle\Admin\AbstractAdmin;
+use Sonata\AdminBundle\Route\RouteCollectionInterface;
 
 class ProcessResourceTagAdmin extends AbstractAdmin
 {
-    protected $parentAssociationMapping = 'process';
 
-    protected function configureRoutes(RouteCollection $collection)
+    protected function configureRoutes(RouteCollectionInterface $collection) :void
     {
         $collection
             ->remove('show')
@@ -21,7 +20,7 @@ class ProcessResourceTagAdmin extends AbstractAdmin
             ->remove('edit');
     }
 
-    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+    protected function configureDatagridFilters(DatagridMapper $datagridMapper) :void
     {
         $datagridMapper
             ->add('className', null, ['show_filter' => true, 'label' => 'Tag type'])
@@ -29,7 +28,7 @@ class ProcessResourceTagAdmin extends AbstractAdmin
             ->add('resourceCode', null, ['show_filter' => true, 'label' => 'Tag code']);
     }
 
-    protected function configureListFields(ListMapper $listMapper)
+    protected function configureListFields(ListMapper $listMapper) : void
     {
         unset($this->listModes['mosaic']);
 

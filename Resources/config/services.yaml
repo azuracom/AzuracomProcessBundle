@@ -16,6 +16,10 @@ services:
         class: Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler
 
 
+    #controllers
+    Azuracom\ProcessBundle\Controller\:
+        resource: '../../Controller'
+        tags: ['controller.service_arguments']
 
 
     #private services

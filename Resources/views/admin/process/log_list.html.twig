@@ -9,7 +9,7 @@
     <tbody>
         {% for row in rows %}
             <tr>
-                <td>{{ row.datetime.date|date('d/m/Y H:i:s') }}</td>
+                <td>{{ row.datetime.date is defined ? row.datetime.date|date('d/m/Y H:i:s')  : row.datetime|date('d/m/Y H:i:s') }}</td>
                 <td>
                     <span class="label label-{{ object.getStatusColorStatic(row.level_name) }}">
                         {{ row.level_name }}
