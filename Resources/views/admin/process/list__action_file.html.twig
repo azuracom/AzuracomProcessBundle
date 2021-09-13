@@ -1,5 +1,5 @@
 {% if vich_uploader_asset(object, 'file') is not empty %}
     <a class="btn btn-default btn-sm" href="{{ vich_uploader_asset(object, 'file') }}">
-    	<span class='glyphicon glyphicon-download'></span> Fichier
+    	<span class='glyphicon glyphicon-download'></span> {{ "azuracom_process.process.label.file"|trans }}
     </a>
 {% endif %}

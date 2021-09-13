@@ -3,6 +3,9 @@
 namespace Azuracom\ProcessBundle\Admin;
 
 use Azuracom\ProcessBundle\Controller\ProcessAdminController;
+use Azuracom\ProcessBundle\Form\StatusChoiceType;
+use Azuracom\ProcessBundle\Form\TypeChoiceType;
+use Azuracom\ProcessBundle\Helper\ProcessHelperInterface;
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Datagrid\DatagridMapper;
 use Sonata\DoctrineORMAdminBundle\Filter\ModelAutocompleteFilter;
@@ -23,11 +26,8 @@ class ProcessAdmin extends AbstractAdmin
         '_sort_by' => 'createdAt',
     );
 
-    /** @var array */
-    protected $typeList = [];
-
-    /** @var array */
-    protected $statusList = [];
+    /** @var ProcessHelperInterface */
+    protected $processHelper;
 
     /** @var string */
     protected $userClass;
@@ -54,20 +54,6 @@ class ProcessAdmin extends AbstractAdmin
         ];
     }
 
-    public function getStatusList()
-    {
-        $list = [];
-        foreach ($this->statusList as $status) {
-            $list[$status] = $this->getStatusLabel($status);
-        }
-
-        return $list;
-    }
-
-    public function getStatusLabel($status)
-    {
-        return str_replace('_', ' ', $status);
-    }
 
     protected function configureDatagridFilters(DatagridMapper $datagridMapper): void
     {
@@ -75,24 +61,18 @@ class ProcessAdmin extends AbstractAdmin
             ->add('id', null, array('show_filter' => true))
             ->add('type', null, array(
                 'show_filter' => true,
-                'field_type' => ChoiceType::class,
-                'field_options' => [
-                    'choices' => array_flip($this->getTypeList())
-                ]
+                'field_type' => TypeChoiceType::class,
             ))
             ->add('status', null, array(
                 'show_filter' => true,
-                'label' => 'Statut',
-                'field_type' => ChoiceType::class,
-                'field_options' => [
-                    'choices' => array_flip($this->getStatusList())
-                ]
+                'label' => 'azuracom_process.process.label.status',
+                'field_type' => StatusChoiceType::class,
             ));
 
         if ($this->getUserClass()) {
             $datagridMapper->add('user', ModelAutocompleteFilter::class, array(
                 'show_filter' => true,
-                'label' => 'Utilisateur',
+                'label' => 'azuracom_process.process.label.user',
                 'field_options' => [
                     'property' => 'email',
                 ]
@@ -101,7 +81,7 @@ class ProcessAdmin extends AbstractAdmin
         $datagridMapper->add('createdAt', DateRangeFilter::class, array(
             'show_filter' => true,
             'field_type' => DateRangePickerType::class,
-            'label' => 'Date de création',
+            'label' => 'azuracom_process.process.label.created_at',
         ))
             ->add('withFile', CallbackFilter::class, [
                 'show_filter' => true,
@@ -109,7 +89,7 @@ class ProcessAdmin extends AbstractAdmin
                 'field_options' => [
                     'choices' => ['oui' => 1, 'non' => 0]
                 ],
-                'label' => 'Avec fichier',
+                'label' => 'azuracom_process.process.label.with_file',
                 'callback' => function ($queryBuilder, $alias, $field, FilterData $filterData) {
                     if ($filterData->getValue() === null) {
                         return;
@@ -128,7 +108,7 @@ class ProcessAdmin extends AbstractAdmin
                 'field_options' => [
                     'choices' => ['oui' => 1, 'non' => 0]
                 ],
-                'label' => 'Terminé',
+                'label' => 'azuracom_process.process.label.unfinished',
                 'callback' => function ($queryBuilder, $alias, $field, FilterData $filterData) {
                     if ($filterData->getValue() === null) {
                         return;
@@ -140,10 +120,10 @@ class ProcessAdmin extends AbstractAdmin
                     return true;
                 }
             ])
-            ->add('resolved', null, array('label' => 'Résolu', 'show_filter' => true))
-            ->add('resourceTags.className', null, ['show_filter' => true, 'label' => 'Tag type'])
-            ->add('resourceTags.resourceId', null, ['show_filter' => true, 'label' => 'Tag id'])
-            ->add('resourceTags.resourceCode', null, ['show_filter' => true, 'label' => 'Tag code']);
+            ->add('resolved', null, array('label' => 'azuracom_process.process.label.resolved', 'show_filter' => true))
+            ->add('resourceTags.className', null, ['show_filter' => true, 'label' => 'azuracom_process.resource_tag.label.class_name'])
+            ->add('resourceTags.resourceId', null, ['show_filter' => true, 'label' => 'azuracom_process.resource_tag.label.resource_id'])
+            ->add('resourceTags.resourceCode', null, ['show_filter' => true, 'label' => 'azuracom_process.resource_tag.label.resource_code']);
     }
 
     protected function configureListFields(ListMapper $listMapper): void
@@ -153,24 +133,25 @@ class ProcessAdmin extends AbstractAdmin
         $listMapper
             ->add('id')
             ->add('type', null, array(
-                'label' => 'Type',
+                'label' => 'azuracom_process.process.label.type',
                 'template' => '@AzuracomProcess/admin/process/list__field_type.html.twig'
             ))
-            ->add('user', 'string', array('label' => 'Utilisateur'))
-            ->add('originalFileName', null, array('label' => 'Nom fichier'))
-            ->add('createdAt', null, array('label' => 'Date de création', 'format' => 'd/m/Y H:i:s'))
+            ->add('user', 'string', array('label' => 'azuracom_process.process.label.user'))
+            ->add('originalFileName', null, array('label' => 'azuracom_process.process.label.filename'))
+            ->add('createdAt', null, array('label' => 'azuracom_process.process.label.created_at', 'format' => 'd/m/Y H:i:s'))
             ->add('executionDiff', null, array(
-                'label' => "Temps d'exécution",
+                'label' => "azuracom_process.process.label.execution_diff",
                 'template' => '@AzuracomProcess/admin/process/list__field_exec_time.html.twig',
                 'format'=> '%H:%I:%S',
             ))
             ->add('status', null, array(
-                'label' => 'Statut',
+                'label' => 'azuracom_process.process.label.status',
                 'template' => '@AzuracomProcess/admin/process/list__field_status.html.twig'
             ))
-            ->add('resolved', null, array('label' => 'Résolu', 'editable' => true))
+            ->add('resolved', null, array('label' => 'azuracom_process.process.label.resolved', 'editable' => true))
             ->add('options', null, array(
-                'template' => '@AzuracomProcess/admin/process/list__field_options.html.twig'
+                'template' => '@AzuracomProcess/admin/process/list__field_options.html.twig',
+                'label' => 'azuracom_process.process.label.options'
             ))
             ->add(ListMapper::NAME_ACTIONS, null, array(
                 'actions' => array(
@@ -208,38 +189,6 @@ class ProcessAdmin extends AbstractAdmin
 
 
     /**
-     * Get the value of typeList
-     */
-    public function getTypeList()
-    {
-        return $this->typeList;
-    }
-
-    /**
-     * Set the value of typeList
-     *
-     * @return  self
-     */
-    public function setTypeList($typeList)
-    {
-        $this->typeList = $typeList;
-
-        return $this;
-    }
-
-    /**
-     * Set the value of statusList
-     *
-     * @return  self
-     */
-    public function setStatusList($statusList)
-    {
-        $this->statusList = $statusList;
-
-        return $this;
-    }
-
-    /**
      * Get the value of userClass
      */
     public function getUserClass()
@@ -255,6 +204,26 @@ class ProcessAdmin extends AbstractAdmin
     public function setUserClass($userClass)
     {
         $this->userClass = $userClass;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of processHelper
+     */ 
+    public function getProcessHelper()
+    {
+        return $this->processHelper;
+    }
+
+    /**
+     * Set the value of processHelper
+     *
+     * @return  self
+     */ 
+    public function setProcessHelper($processHelper)
+    {
+        $this->processHelper = $processHelper;
 
         return $this;
     }

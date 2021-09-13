@@ -14,7 +14,7 @@ class ProcessHelper implements ProcessHelperInterface
     /** @var ProcessInterface|null */
     protected $process;
 
-    public function __construct(LoggerInterface $processLogger)
+    public function __construct(LoggerInterface $processLogger,private array $typeList,private array $statusList)
     {
         $this->logger = $processLogger;
     }
@@ -69,5 +69,31 @@ class ProcessHelper implements ProcessHelperInterface
     public function getHandler(): ProcessHandler
     {
         return $this->logger->getHandlers()[0];
+    }
+
+    public function getTypeLabel(string $type): ?string
+    {
+        return isset($this->typeList[$type]) ? $this->typeList[$type] : null;
+    }
+
+    public function getStatusLabel(string $status) :?string
+    {
+        return isset($this->statusList[$status]) ? $this->statusList[$status] : null;
+    }
+
+    /**
+     * Get the value of typeList
+     */ 
+    public function getTypeList() : array
+    {
+        return $this->typeList;
+    }
+
+    /**
+     * Get the value of statusList
+     */ 
+    public function getStatusList() :array
+    {
+        return $this->statusList;
     }
 }

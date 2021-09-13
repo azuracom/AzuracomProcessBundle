@@ -3,8 +3,7 @@ services:
         class: '%azuracom_process.admin.process.class%'
         arguments: [null, '%azuracom_process.model.process.class%', ~]
         calls:
-            - [setTypeList, ['%azuracom_process.types%']]
-            - [setStatusList, ['%azuracom_process.status%']]
+            - [setProcessHelper, ['@azuracom_process.helper']]
         tags:
             - { name: sonata.admin, manager_type: orm, label: Process }
 

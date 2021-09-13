@@ -2,6 +2,6 @@
 
 {% block field %}
     <span class="label label-{{ object.statusColor }}">
-        {{ admin.statusList[object.status] }}
+        {{ admin.processHelper.statusLabel(object.status)|trans }}
     </span>
 {% endblock %}

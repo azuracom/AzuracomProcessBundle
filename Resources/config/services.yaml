@@ -11,6 +11,9 @@ services:
     
     azuracom_process.helper:
         class: Azuracom\ProcessBundle\Helper\ProcessHelper
+        arguments:
+            $typeList: '%azuracom_process.types%'
+            $statusList: '%azuracom_process.status%'
         
     azuracom_process.monolog.process_handler:
         class: Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler
@@ -59,7 +62,11 @@ services:
     Azuracom\ProcessBundle\Command\DeferProcessHandleCommand:
         public: false
         tags:
-            - { name: 'console.command' }              
+            - { name: 'console.command' } 
+            
+    Azuracom\ProcessBundle\Form\:
+        resource: '../../Form'
+        tags: ['form.type']
                         
 
     #aliases

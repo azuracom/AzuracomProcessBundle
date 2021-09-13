@@ -15,4 +15,12 @@ interface ProcessHelperInterface
     public function getLogAsArray(): array;
 
     public function getHandler(): ProcessHandler;
+
+    public function getStatusList(): array;
+
+    public function getTypeList(): array;
+
+    public function getTypeLabel(string $type): ?string;
+
+    public function getStatusLabel(string $status) :?string;
 }

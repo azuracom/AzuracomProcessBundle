@@ -1,5 +1,5 @@
 {% if admin.hasChild('azuracom_process.admin.process_resource_tag') %}
 	<a class="btn btn-default btn-sm" href="{{ admin.generateUrl('azuracom_process.admin.process_resource_tag.list',{id:object.id}) }}">
-		<i class="fa fa-tags" aria-hidden="true"></i> Tag
+		<i class="fa fa-tags" aria-hidden="true"></i> {{ "azuracom_process.process.label.tags"|trans }}
 	</a>
 {% endif %}

@@ -1,6 +1,6 @@
 
 <a class='btn btn-default btn-sm load-log' href="{{ admin.generateObjectUrl('loadLog', object) }}" data-target="#log{{ object.id }}">
-    <span class='glyphicon glyphicon-info-sign'></span> Log
+    <span class='glyphicon glyphicon-info-sign'></span> {{ "azuracom_process.process.label.logs"|trans }}
 </a>
 
 <div class="modal fade modal-log" id="log{{ object.id }}" tabindex="-1" role="dialog" >
@@ -8,13 +8,13 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title" >Logs</h4>
+                <h4 class="modal-title" >{{ "azuracom_process.process.label.logs"|trans }}</h4>
             </div>
             <div class="modal-body">
                 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ "azuracom_process.action.close"|trans }}</button>
             </div>            
         </div>
     </div>

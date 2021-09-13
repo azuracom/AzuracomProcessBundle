@@ -31,7 +31,7 @@ class AzuracomProcessExtension extends AbstractResourceExtension
         $status = [];
         foreach($oClass->getConstants() as $constName => $value){
             if(preg_match("#^STATUS_#",$constName)){
-                $status[] = $value;
+                $status[$value] = sprintf("azuracom_process.process.status.%s",$value);
             }
         }
         

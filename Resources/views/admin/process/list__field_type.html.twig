@@ -1,5 +1,5 @@
 {% extends '@SonataAdmin/CRUD/base_list_field.html.twig' %}
 
 {% block field %}
-    {{ admin.typeList[object.type] is defined ? admin.typeList[object.type] : object.type }}
+    {{ admin.processHelper.typeLabel(object.type)|trans }}
 {% endblock %}

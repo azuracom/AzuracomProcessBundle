@@ -20,7 +20,7 @@
                         }                                         
                     },
                     error: function(response){
-                        $(target).find('.modal-body').html("<p>Logs introuvables</p>");
+                        $(target).find('.modal-body').html("<p>{{ "azuracom_process.errors.logs_not_found"|trans }}</p>");
                     }
                 });
             });

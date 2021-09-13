@@ -40,7 +40,7 @@ abstract class AbstractHandler implements HandlerInterface
 
     public static function getTypeLabel(string $type): string
     {
-        return strtolower(str_replace("\\", "_", static::class)) . "." . $type;
+        return "app.process.type." . $type;
     }
 
     /**

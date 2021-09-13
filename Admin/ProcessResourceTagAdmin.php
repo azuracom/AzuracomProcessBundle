@@ -23,9 +23,9 @@ class ProcessResourceTagAdmin extends AbstractAdmin
     protected function configureDatagridFilters(DatagridMapper $datagridMapper) :void
     {
         $datagridMapper
-            ->add('className', null, ['show_filter' => true, 'label' => 'Tag type'])
-            ->add('resourceId', null, ['show_filter' => true, 'label' => 'Tag id'])
-            ->add('resourceCode', null, ['show_filter' => true, 'label' => 'Tag code']);
+            ->add('className', null, ['show_filter' => true, 'label' => 'azuracom_process.resource_tag.label.class_name'])
+            ->add('resourceId', null, ['show_filter' => true, 'label' => 'azuracom_process.resource_tag.label.resource_id'])
+            ->add('resourceCode', null, ['show_filter' => true, 'label' => 'azuracom_process.resource_tag.label.resource_code']);
     }
 
     protected function configureListFields(ListMapper $listMapper) : void
@@ -33,9 +33,9 @@ class ProcessResourceTagAdmin extends AbstractAdmin
         unset($this->listModes['mosaic']);
 
         $listMapper
-            ->add('className', null, ['label' => 'Type'])
-            ->add('resourceId', null, ['label' => 'Id'])
-            ->add('resourceCode', null, ['label' => 'Code'])
-            ->add('comment', null, ['label' => 'Info']);
+            ->add('className', null, ['label' => 'azuracom_process.resource_tag.label.class_name'])
+            ->add('resourceId', null, ['label' => 'azuracom_process.resource_tag.label.resource_id'])
+            ->add('resourceCode', null, ['label' => 'azuracom_process.resource_tag.label.resource_code'])
+            ->add('comment', null, ['label' => 'azuracom_process.resource_tag.label.comment']);
     }
 }
