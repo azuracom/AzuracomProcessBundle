@@ -7,8 +7,8 @@ use Azuracom\ProcessBundle\Model\ProcessInterface;
 
 interface HandlerInterface
 {
-    public static function getType(): string;
-    public static function getTypeLabel(): string;
+    public static function getTypes(): array;
+    public static function getTypeLabel(string $type): string;
 
     public function handle(): void;
     public function isEligible(ProcessInterface $process): bool;

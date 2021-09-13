@@ -28,9 +28,10 @@ class ProcessHandlerPass implements CompilerPassInterface
             }
 
             //set available types in parameter
-            $key = call_user_func($handlerDefinition->getClass() . '::getType');
-            $label = call_user_func($handlerDefinition->getClass() . '::getTypeLabel');
-            $types[$key] =  $label;
+            foreach(call_user_func($handlerDefinition->getClass() . '::getTypes') as $type){
+                $label = call_user_func($handlerDefinition->getClass() . '::getTypeLabel',$type);
+                $types[$type] =  $label;
+            }
         }
 
         $container->setParameter('azuracom_process.types', $types);

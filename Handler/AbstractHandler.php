@@ -16,34 +16,37 @@ abstract class AbstractHandler implements HandlerInterface
 
     public function isEligible(ProcessInterface $process): bool
     {
-        return $process->getType() == self::getType();
+        return in_array($process->getType(), static::getTypes());
     }
 
     public function configure(): void
     {
-        if($this->process && $this->helper){
+        if ($this->process && $this->helper) {
             $this->helper->setSubject($this->process);
         }
     }
 
-    public static function getType(): string
+    public static function getTypes(): array
     {
-        if (preg_match('~([^\\\\]+?)$~i', static::class, $matches)) {
-            return strtolower(preg_replace(['/([A-Z]+)([A-Z][a-z])/', '/([a-z\d])([A-Z])/'], ['\\1_\\2', '\\1_\\2'], $matches[1]));
+        $oClass = new \ReflectionClass(static::class);
+        $types = [];
+        foreach ($oClass->getConstants() as $constName => $constValue) {
+            if (preg_match("#^TYPE_#", $constName)) {
+                $types[] = $constValue;
+            }
         }
-
-        return null;
+        return $types;
     }
 
-    public static function getTypeLabel(): string
+    public static function getTypeLabel(string $type): string
     {
-        return static::getType();
+        return strtolower(str_replace("\\", "_", static::class)) . "." . $type;
     }
 
     /**
      * Get the value of process
-     */ 
-    public function getProcess() : ?ProcessInterface
+     */
+    public function getProcess(): ?ProcessInterface
     {
         return $this->process;
     }
@@ -52,8 +55,8 @@ abstract class AbstractHandler implements HandlerInterface
      * Set the value of process
      *
      * @return  self
-     */ 
-    public function setProcess(?ProcessInterface $process) :self
+     */
+    public function setProcess(?ProcessInterface $process): self
     {
         $this->process = $process;
 
@@ -62,8 +65,8 @@ abstract class AbstractHandler implements HandlerInterface
 
     /**
      * Get the value of helper
-     */ 
-    public function getHelper() : ?ProcessHelperInterface
+     */
+    public function getHelper(): ?ProcessHelperInterface
     {
         return $this->helper;
     }
@@ -72,8 +75,8 @@ abstract class AbstractHandler implements HandlerInterface
      * Set the value of helper
      *
      * @return  self
-     */ 
-    public function setHelper(?ProcessHelperInterface $helper) : self
+     */
+    public function setHelper(?ProcessHelperInterface $helper): self
     {
         $this->helper = $helper;
 

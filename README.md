@@ -105,6 +105,11 @@ use App\Entity\Product;
 class ImportProductHandler extends AbstractHandler
 {
 
+    //const types should starts with 'TYPE_' so the getTypes methods works automatically
+    //each tpye const value should be unique in all project
+    const TYPE_IMPORT_INTERFACE = 'product_import_interface';
+    const TYPE_IMPORT_EMAIL = 'product_import_email';
+
     /** @var EntityManagerInterface */
     protected $em;
 
@@ -149,9 +154,16 @@ class ImportProductHandler extends AbstractHandler
         $this->process->endProcess();
     }
 
-    public static function getTypeLabel() :string
+    public static function getTypeLabel($type) :string
     {
-        return "Import des produits";
+        switch($type){
+            case self::TYPE_IMPORT_INTERFACE:
+                return "Import des produits (depuis l'interface)";
+
+            case self::TYPE_IMPORT_EMAIL:
+                return "Import des produits (par email)";
+        }
+        
     }
 }
 
@@ -182,7 +194,9 @@ class ProductController extends AbstractController
     {
         $em = $this->getDoctrine()->getManager();
         $process = $processFactory->createNew();
-        $process->setType(ImportProductHandler::getType());
+        $process->setType(ImportProductHandler::TYPE_IMPORT_INTERFACE);
+        //both types trigger the same handler
+        //$process->setType(ImportProductHandler::TYPE_IMPORT_EMAIL);
         
         $handler = $provider->getHandler($process);
         $handler->handle();
@@ -252,7 +266,7 @@ class ProductController extends AbstractController
     {
         $em = $this->getDoctrine()->getManager();
         $process = $processFactory->createNew();
-        $process->setType(ImportProductHandler::getType());
+        $process->setType(ImportProductHandler::TYPE_IMPORT_INTERFACE);
         $process->setStatus(ProcessInterface::STATUS_WAITING_DEFERRED)
         
         $em->persist($process);
