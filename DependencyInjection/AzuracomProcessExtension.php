@@ -48,6 +48,7 @@ class AzuracomProcessExtension extends AbstractResourceExtension
         //setUserClass to process admin
         $definition = $container->getDefinition("azuracom_process.admin.process");
         $definition->addMethodCall('setUserClass',[$config['user_class']]);
+        $definition->addMethodCall('setTokenStorage',['@security.token_storage']);
     }
 
     protected function registerResources(

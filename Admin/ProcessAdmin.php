@@ -18,6 +18,7 @@ use Sonata\AdminBundle\Filter\Model\FilterData;
 use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Route\RouteCollectionInterface;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class ProcessAdmin extends AbstractAdmin
 {
@@ -31,6 +32,9 @@ class ProcessAdmin extends AbstractAdmin
 
     /** @var string */
     protected $userClass;
+    
+    /** @var TokenStorageInterface */
+    private $tokenStorage;
 
     protected function configureRoutes(RouteCollectionInterface $collection): void
     {
@@ -172,7 +176,8 @@ class ProcessAdmin extends AbstractAdmin
     public function createNewInstance(): object
     {
         $process = parent::createNewInstance();
-        $process->setUser($this->getCurrentUser());
+        $user = $this->tokenStorage->getToken()->getUser();
+        $process->setUser($user);
         $process->setType($this->getRequest()->get('type'));
 
         return $process;
@@ -185,6 +190,13 @@ class ProcessAdmin extends AbstractAdmin
         $this->setTemplate('log_list', "@AzuracomProcess/admin/process/log_list.html.twig");
         $this->setBaseControllerName(ProcessAdminController::class);
         $this->addChild($this->getConfigurationPool()->getAdminByAdminCode("azuracom_process.admin.process_resource_tag"), 'process');
+    }
+
+    public function setTokenStorage(TokenStorageInterface $tokenStorage)
+    {
+        $this->tokenStorage = $tokenStorage;
+        
+        return $this;
     }
 
 
