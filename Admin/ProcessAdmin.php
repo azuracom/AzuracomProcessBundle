@@ -133,7 +133,6 @@ class ProcessAdmin extends AbstractAdmin
     protected function configureListFields(ListMapper $listMapper): void
     {
         unset($this->listModes['mosaic']);
-
         $listMapper
             ->add('id')
             ->add('type', null, array(
@@ -192,7 +191,7 @@ class ProcessAdmin extends AbstractAdmin
         $this->addChild($this->getConfigurationPool()->getAdminByAdminCode("azuracom_process.admin.process_resource_tag"), 'process');
     }
 
-    public function setTokenStorage(TokenStorageInterface $tokenStorage)
+    public function setTokenStorage($tokenStorage)
     {
         $this->tokenStorage = $tokenStorage;
         
