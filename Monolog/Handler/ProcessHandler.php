@@ -23,6 +23,7 @@ class ProcessHandler extends StreamHandler
 
     public function setSubject(ProcessInterface $process)
     {
+        $this->close();
         if(!$process->getUniqueId()){
             $process->generateUniqueId();
         }
