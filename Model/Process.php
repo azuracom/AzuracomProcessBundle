@@ -100,6 +100,7 @@ class Process implements ResourceInterface, ProcessInterface
     {        
         $this->resourceTags = new ArrayCollection();        
         $this->type = $type;
+        $this->generateUniqueId();
         if ($autoStart) {
             $this->startProcess();
         }

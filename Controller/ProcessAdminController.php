@@ -2,8 +2,12 @@
 
 namespace Azuracom\ProcessBundle\Controller;
 
+use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Helper\ProcessHelperInterface;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Sonata\AdminBundle\Controller\CRUDController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -17,10 +21,54 @@ class ProcessAdminController extends CRUDController
         ] + parent::getSubscribedServices();
     }
 
+    public function createAction(Request $request): Response
+    {
+        if (!$request->query->has('type')) {
+            foreach ($this->admin->getAllowedCreationTypes() as $type) {
+                $types[$type] = $this->admin->getProcessHelper()->getTypeLabel($type);
+            }
+
+            return $this->renderWithExtraParams('back/process/create_choice.html.twig', [
+                'action' => 'edit',
+                'object' => null,
+                'types' => $types,
+                'objectId' => null,
+
+            ]);
+        }
+        return parent::createAction($request);
+    }
+
+    protected function redirectTo(Request $request, object $object): RedirectResponse
+    {
+        if ($request->get('_route') === "admin_azuracom_process_process_create" && $object->getStatus() === ProcessInterface::STATUS_NEW) {
+            return $this->redirect($this->admin->generateObjectUrl("handle", $object));
+        }
+
+        return parent::redirectTo($request, $object);
+    }
+
+    public function handleAction($id, HandlerProviderInterface $handlerProvider): Response
+    {
+        $object = $this->admin->getSubject();
+        $this->admin->checkAccess('handle', $object);
+
+        if (!$object || $object->getStatus() !== ProcessInterface::STATUS_NEW) {
+            throw new NotFoundHttpException(sprintf('unable to find the object with id: %s', $id));
+        }
+
+        $handler = $handlerProvider->getHandler($object);
+        $handler->handle();
+
+        $this->getDoctrine()->getManager()->flush();
+
+        return new RedirectResponse($this->admin->generateUrl('list', ['id' => $object->getId()]));
+    }
+
     /**
      * @param $id
      */
-    public function loadLogAction($id) : Response
+    public function loadLogAction($id): Response
     {
         $object = $this->admin->getSubject();
 
@@ -35,9 +83,9 @@ class ProcessAdminController extends CRUDController
 
         $template = $this->admin->getTemplateRegistry()->getTemplate('log_list');
 
-        return $this->renderWithExtraParams($template,[
-            'rows'=> $helper->getLogAsArray(),
-            'object'=> $object,
+        return $this->renderWithExtraParams($template, [
+            'rows' => $helper->getLogAsArray(),
+            'object' => $object,
         ]);
     }
 }

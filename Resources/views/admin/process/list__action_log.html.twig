@@ -1,5 +1,5 @@
 
-<a class='btn btn-default btn-sm load-log' href="{{ admin.generateObjectUrl('loadLog', object) }}" data-target="#log{{ object.id }}">
+<a class='btn btn-default btn-sm load-log' data-id="{{ object.id }}" href="{{ admin.generateObjectUrl('loadLog', object) }}" data-target="#log{{ object.id }}">
     <span class='glyphicon glyphicon-info-sign'></span> {{ "azuracom_process.process.label.logs"|trans }}
 </a>
 

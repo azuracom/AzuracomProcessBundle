@@ -5,6 +5,7 @@ namespace Azuracom\ProcessBundle\Admin;
 use Azuracom\ProcessBundle\Controller\ProcessAdminController;
 use Azuracom\ProcessBundle\Form\StatusChoiceType;
 use Azuracom\ProcessBundle\Form\TypeChoiceType;
+use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Helper\ProcessHelperInterface;
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Datagrid\DatagridMapper;
@@ -14,50 +15,92 @@ use Sonata\DoctrineORMAdminBundle\Filter\CallbackFilter;
 use Sonata\Form\Type\DateRangePickerType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Sonata\AdminBundle\Admin\AbstractAdmin;
+use Sonata\AdminBundle\Datagrid\DatagridInterface;
 use Sonata\AdminBundle\Filter\Model\FilterData;
 use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Route\RouteCollectionInterface;
-use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Validator\Constraints\File;
+use Vich\UploaderBundle\Form\Type\VichFileType;
 
 class ProcessAdmin extends AbstractAdmin
 {
-    protected $datagridValues = array(
-        '_sort_order' => 'DESC',
-        '_sort_by' => 'createdAt',
-    );
-
     /** @var ProcessHelperInterface */
     protected $processHelper;
 
+    /** @var HandlerProviderInterface */
+    protected $handlerPRovider;
+
     /** @var string */
     protected $userClass;
-    
+
     /** @var TokenStorageInterface */
     private $tokenStorage;
+
+    protected function configureDefaultSortValues(array &$sortValues): void
+    {
+        $sortValues[DatagridInterface::SORT_ORDER] = 'DESC';
+        $sortValues[DatagridInterface::SORT_BY] = 'createdAt';
+    }
+
+    protected function getAccessMapping(): array
+    {
+        return [
+            'handle' => 'HANDLE'
+        ];
+    }
+
+    public function getAllowedCreationTypes()
+    {
+        return [];
+    }
+
+    protected function configureFormFields(FormMapper $formMapper): void
+    {
+        $type = $this->getSubject()->getType();
+        $formMapper
+            ->add('file', VichFileType::class, array(
+                'constraints' => $this->getFileConstraints($type)
+            ));
+    }
+
+    protected function getFileConstraints($type)
+    {
+        return [
+            new File([
+                'maxSize' => '2M',
+                'mimeTypes' => [
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    "text/xml"
+                ],
+            ])
+        ];
+    }
+
+
+    public function configurePersistentParameters(): array
+    {
+        if (preg_match('#create#', $this->getRequest()->get('_route'))) {
+            return [
+                'type' => $this->getRequest()->get('type'),
+            ];
+        }
+        return [];
+    }
 
     protected function configureRoutes(RouteCollectionInterface $collection): void
     {
         $collection
             ->remove('show')
             ->remove('export')
-            //->remove('delete')
             ->remove('edit')
-            ->remove('create')
-            ->add('loadLog', $this->getRouterIdParameter() . '/load-log');
-    }
-
-    public function configurePersistentParameters(): array
-    {
-        if (!$this->getRequest()->query->has('type')) {
-            return [];
+            ->add('loadLog', $this->getRouterIdParameter() . '/load-log')
+            ->add('handle', $this->getRouterIdParameter() . '/handle');
+        if (count($this->getAllowedCreationTypes()) == 0) {
+            $collection->remove('create');
         }
-
-        return [
-            'type' => $this->getRequest()->get('type'),
-        ];
     }
-
 
     protected function configureDatagridFilters(DatagridMapper $datagridMapper): void
     {
@@ -145,7 +188,7 @@ class ProcessAdmin extends AbstractAdmin
             ->add('executionDiff', null, array(
                 'label' => "azuracom_process.process.label.execution_diff",
                 'template' => '@AzuracomProcess/admin/process/list__field_exec_time.html.twig',
-                'format'=> '%H:%I:%S',
+                'format' => '%H:%I:%S',
             ))
             ->add('status', null, array(
                 'label' => 'azuracom_process.process.label.status',
@@ -164,12 +207,6 @@ class ProcessAdmin extends AbstractAdmin
                     'delete' => [],
                 )
             ));
-    }
-
-    protected function configureFormFields(FormMapper $formMapper): void
-    {
-        $formMapper
-            ->add('options', HiddenType::class, array('mapped' => false));
     }
 
     public function createNewInstance(): object
@@ -194,7 +231,7 @@ class ProcessAdmin extends AbstractAdmin
     public function setTokenStorage($tokenStorage)
     {
         $this->tokenStorage = $tokenStorage;
-        
+
         return $this;
     }
 
@@ -221,7 +258,7 @@ class ProcessAdmin extends AbstractAdmin
 
     /**
      * Get the value of processHelper
-     */ 
+     */
     public function getProcessHelper()
     {
         return $this->processHelper;
@@ -231,10 +268,30 @@ class ProcessAdmin extends AbstractAdmin
      * Set the value of processHelper
      *
      * @return  self
-     */ 
+     */
     public function setProcessHelper($processHelper)
     {
         $this->processHelper = $processHelper;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of handlerPRovider
+     */
+    public function getHandlerPRovider()
+    {
+        return $this->handlerPRovider;
+    }
+
+    /**
+     * Set the value of handlerPRovider
+     *
+     * @return  self
+     */
+    public function setHandlerPRovider($handlerPRovider)
+    {
+        $this->handlerPRovider = $handlerPRovider;
 
         return $this;
     }
