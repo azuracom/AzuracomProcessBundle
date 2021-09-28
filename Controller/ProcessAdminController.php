@@ -28,7 +28,7 @@ class ProcessAdminController extends CRUDController
                 $types[$type] = $this->admin->getProcessHelper()->getTypeLabel($type);
             }
 
-            return $this->renderWithExtraParams('back/process/create_choice.html.twig', [
+            return $this->renderWithExtraParams('@AzuracomProcess/admin/process/create_choice.html.twig', [
                 'action' => 'edit',
                 'object' => null,
                 'types' => $types,
