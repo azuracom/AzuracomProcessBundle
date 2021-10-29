@@ -1,0 +1,40 @@
+azuracom_process:
+    errors: 
+        logs_not_found: Logs introuvables
+    action:
+        close: Fermer
+    log:
+        label:
+            date: Date
+            message: Message
+            status: Statut
+    resource_tag:
+        label:
+            class_name: Resource Type
+            resource_id: Resource Id
+            resource_code: Resource Code
+            comment: Commentaire
+    process:
+        status:
+            new: Nouveau
+            has_error: Erreur
+            has_warning: Avertissement
+            succeded: Réussi
+            in_progress: En cours
+            waiting_deferred: En attente traitement différé
+        label:
+            id: Id
+            date: Date
+            type: Type
+            filename: Nom fichier
+            status: Statut
+            logs: Logs
+            user: Utilisateur
+            created_at: Créé le
+            with_file: Avec fichier
+            unfinished: Non fini
+            resolved: Resolu
+            options: Options
+            tags: Tags
+            execution_diff: temps execution diff
+            file: Fichier
