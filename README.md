@@ -9,7 +9,7 @@ Installation
     //...
     "require": {
         //...
-        "azuracom/process-bundle": "1.0"
+        "azuracom/process-bundle": "^1.0"
     },
     "repositories":[
         {

@@ -31,6 +31,10 @@ Azuracom\ProcessBundle\Model\Process:
             length: 255 
             nullable: true 
 
+        options:
+            type: array
+            nullable: true 
+            
         startedAt:
             type: datetime
             nullable: true        
