@@ -50,7 +50,7 @@ class DeferProcessHandleCommand extends Command
             );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $start = new \DateTime($input->getOption('date'));
         $end = clone $start;
@@ -68,11 +68,11 @@ class DeferProcessHandleCommand extends Command
         $count = count($processes);
         $output->writeln(sprintf("%s process found", $count));
         if (!$count) {
-            return;
+            return self::SUCCESS;
         }
 
         foreach ($processes as $process) {
-            $output->writeln(sprintf("Start handle #%s of type %s",$process->getId(),$process->getType()));
+            $output->writeln(sprintf("Start handle #%s of type %s", $process->getId(), $process->getType()));
             //set process in progress to avoid conflict when several commands are running at the same time
             $process->setStatus(ProcessInterface::STATUS_IN_PROGRESS);
             $this->manager->flush();
@@ -84,5 +84,7 @@ class DeferProcessHandleCommand extends Command
         $output->write("Save...");
         $this->manager->flush();
         $output->write("<info>Done</info>\n");
+
+        return self::SUCCESS;
     }
 }

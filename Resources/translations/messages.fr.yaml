@@ -1,8 +1,11 @@
 azuracom_process:
     errors: 
         logs_not_found: Logs introuvables
+        file_openning_failed: Impossible d'ouvrir le fichier
+        sheet_not_found: Feuille introuvable
     action:
         close: Fermer
+        defer: Traitement différé
     log:
         label:
             date: Date

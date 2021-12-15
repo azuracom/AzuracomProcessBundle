@@ -1,8 +1,11 @@
 azuracom_process:
     errors: 
         logs_not_found: Logs not found
+        file_openning_failed: File openning failed
+        sheet_not_found: Sheet not found  
     action:
         close: Close
+        defer: Deferred processing
     log:
         label:
             date: Date

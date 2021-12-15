@@ -9,6 +9,8 @@ use Doctrine\ORM\Query;
 
 interface ProcessInterface
 {
+    const DEFER_OPTION_NAME = 'defer';
+
     const STATUS_NEW = "new";
     const STATUS_HAS_WARNING = 'has_warning';
     const STATUS_HAS_ERROR = 'has_error';

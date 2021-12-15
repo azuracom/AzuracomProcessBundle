@@ -109,6 +109,8 @@ class ImportProductHandler extends AbstractHandler
     //each tpye const value should be unique in all project
     const TYPE_IMPORT_INTERFACE = 'product_import_interface';
     const TYPE_IMPORT_EMAIL = 'product_import_email';
+    //best practice: if class only handler one type, use class name
+    //const TYPE_DEFAULT = self::class
 
     /** @var EntityManagerInterface */
     protected $em;
@@ -234,11 +236,89 @@ azuracom_process:
         process:
             classes:
                 model: Azuracom\ProcessBundle\Model\Process
-                admin:                Azuracom\ProcessBundle\Admin\ProcessAdmin
+                admin: Azuracom\ProcessBundle\Admin\ProcessAdmin
         process_resource_tag:
             classes:
                 model: Azuracom\ProcessBundle\Model\ProcessResourceTag
                 admin: Azuracom\ProcessBundle\Admin\ProcessResourceTagAdmin                
+```
+
+
+## Admin configuration
+
+```yaml
+# config/packages/azuracom_process.yaml
+azuracom_process:
+    resources:
+        process:
+            classes:
+                admin: App\Admin\ProcessAdmin
+```
+
+```php
+<?php
+
+namespace App\Admin;
+
+use App\Process\ImportProductHandler;
+use App\Process\ImportWorkingSessionHandler;
+use Azuracom\ProcessBundle\Admin\ProcessAdmin as BaseAdmin;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Validator\Constraints\File;
+
+class ProcessAdmin extends  BaseAdmin
+{
+    public function getAllowedCreationTypes(): array
+    {
+        //define all the process type that can be create from the admin
+        return [
+            ImportProductHandler::class,
+        ];
+    }
+
+    public function getDeferTypes(): array
+    {
+        return [
+            //add an option with a checkbox to le user choose if he want the process to be deferred
+            ImportProductHandler::class => 'choice', 
+            //when the process is created it has automatically waiting deferred statis 
+            //ImportProduct::class => 'force', 
+        ];
+    }
+
+    public function getFormOptionsKeys($type): array
+    {
+        //add custom options
+        return match ($type) {
+            ImportProductHandler::class => [
+                ['ignoreInventory', CheckboxType::class, [
+                    'label' => "Ignorer les erreurs d'inventaire",
+                    'required' => false,
+                ]]
+            ],
+            default => [],
+        };
+    }
+
+
+    protected function getFileConstraints($type)
+    {
+        //define file constrain for each type
+        if (in_array($type, [ImportProductHandler::class])) {
+            return [
+                new File([
+                    'maxSize' => '2M',
+                    'mimeTypes' => [
+                        "text/plain",
+                        "application/csv"
+                    ],
+                ])
+            ];
+        }
+
+        return parent::getFileConstraints($type);
+    }
+}
 ```
 
 
@@ -274,6 +354,7 @@ class ProductController extends AbstractController
     }
 }
 ```
+
 
 2. Edit cron tab
 

@@ -97,8 +97,8 @@ class Process implements ResourceInterface, ProcessInterface
 
 
     public function __construct($type = null, $autoStart = true)
-    {        
-        $this->resourceTags = new ArrayCollection();        
+    {
+        $this->resourceTags = new ArrayCollection();
         $this->type = $type;
         $this->generateUniqueId();
         if ($autoStart) {
@@ -113,7 +113,7 @@ class Process implements ResourceInterface, ProcessInterface
 
     public function getExecutionDiff()
     {
-        if(!$this->startedAt || ! $this->endedAt){
+        if (!$this->startedAt || !$this->endedAt) {
             return null;
         }
 
@@ -136,7 +136,7 @@ class Process implements ResourceInterface, ProcessInterface
 
     public function endProcess(): ProcessInterface
     {
-        if ($this->status == self::STATUS_NEW) {
+        if ($this->status == self::STATUS_NEW || $this->status == self::STATUS_IN_PROGRESS) {
             $this->status = self::STATUS_SUCCEDED;
         }
 
@@ -179,20 +179,19 @@ class Process implements ResourceInterface, ProcessInterface
     public static function getStatusColorStatic(string $status): string
     {
         $status = strtolower($status);
-        if(preg_match("#warning#",$status)){
+        if (preg_match("#warning#", $status)) {
             return 'warning';
         }
 
-        if(preg_match("#error#",$status)){
+        if (preg_match("#error#", $status)) {
             return 'danger';
         }
 
-        if(preg_match("#succeded|notice#",$status)){
+        if (preg_match("#succeded|notice#", $status)) {
             return 'success';
         }
 
         return 'default';
-
     }
 
 
@@ -374,6 +373,10 @@ class Process implements ResourceInterface, ProcessInterface
     public function setOptions(array $options): ProcessInterface
     {
         $this->options = $options;
+        $deferOption = isset($options[self::DEFER_OPTION_NAME]) ? $options[self::DEFER_OPTION_NAME] : null;
+        if ($deferOption && $this->status == self::STATUS_NEW) {
+            $this->status = self::STATUS_WAITING_DEFERRED;
+        }
 
         return $this;
     }
@@ -531,7 +534,7 @@ class Process implements ResourceInterface, ProcessInterface
      * Get the value of queries
      *
      * @return  Query[]
-     */ 
+     */
     public function getQueries()
     {
         return $this->queries;
@@ -543,25 +546,25 @@ class Process implements ResourceInterface, ProcessInterface
      * @param  Query[]  $queries
      *
      * @return  self
-     */ 
-    public function setQueries($queries) : ProcessInterface
+     */
+    public function setQueries($queries): ProcessInterface
     {
         $this->queries = $queries;
 
         return $this;
     }
 
-    public function addQuery(Query $query) : ProcessInterface
+    public function addQuery(Query $query): ProcessInterface
     {
         $this->queries[] = $query;
 
         return $this;
     }
 
-    public function removeQuery(Query $query) : ProcessInterface
+    public function removeQuery(Query $query): ProcessInterface
     {
         foreach ($this->queries as $key => $tmp) {
-            if($tmp === $query){
+            if ($tmp === $query) {
                 unset($this->queries[$key]);
                 break;
             }

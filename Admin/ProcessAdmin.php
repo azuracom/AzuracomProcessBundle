@@ -7,6 +7,7 @@ use Azuracom\ProcessBundle\Form\StatusChoiceType;
 use Azuracom\ProcessBundle\Form\TypeChoiceType;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Helper\ProcessHelperInterface;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Datagrid\DatagridMapper;
 use Sonata\DoctrineORMAdminBundle\Filter\ModelAutocompleteFilter;
@@ -19,6 +20,8 @@ use Sonata\AdminBundle\Datagrid\DatagridInterface;
 use Sonata\AdminBundle\Filter\Model\FilterData;
 use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Route\RouteCollectionInterface;
+use Sonata\Form\Type\ImmutableArrayType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Validator\Constraints\File;
 use Vich\UploaderBundle\Form\Type\VichFileType;
@@ -29,7 +32,7 @@ class ProcessAdmin extends AbstractAdmin
     protected $processHelper;
 
     /** @var HandlerProviderInterface */
-    protected $handlerPRovider;
+    protected $handlerProvider;
 
     /** @var string */
     protected $userClass;
@@ -50,7 +53,17 @@ class ProcessAdmin extends AbstractAdmin
         ];
     }
 
-    public function getAllowedCreationTypes()
+    public function getAllowedCreationTypes(): array
+    {
+        return [];
+    }
+
+    public function getDeferTypes(): array
+    {
+        return [];
+    }
+
+    public function getFormOptionsKeys($type): array
     {
         return [];
     }
@@ -62,6 +75,19 @@ class ProcessAdmin extends AbstractAdmin
             ->add('file', VichFileType::class, array(
                 'constraints' => $this->getFileConstraints($type)
             ));
+
+        $keys = $this->getFormOptionsKeys($type);
+        if (isset($this->getDeferTypes()[$type]) && $this->getDeferTypes()[$type] == 'choice') {
+            $keys[] = [ProcessInterface::DEFER_OPTION_NAME, CheckboxType::class, [
+                'label' => 'azuracom_process.action.defer',
+                'required' => false,
+            ]];
+        }
+        if (count($keys)) {
+            $formMapper->add('options', ImmutableArrayType::class, [
+                'keys' => $keys,
+            ]);
+        }
     }
 
     protected function getFileConstraints($type)
@@ -211,10 +237,15 @@ class ProcessAdmin extends AbstractAdmin
 
     public function createNewInstance(): object
     {
+        /** @var ProcessInterface */
         $process = parent::createNewInstance();
         $user = $this->tokenStorage->getToken()->getUser();
         $process->setUser($user);
-        $process->setType($this->getRequest()->get('type'));
+        $type = $this->getRequest()->get('type');
+        $process->setType($type);
+        if (isset($this->getDeferTypes()[$type]) && $this->getDeferTypes()[$type] == 'force') {
+            $process->setStatus(ProcessInterface::STATUS_WAITING_DEFERRED);
+        }
 
         return $process;
     }
@@ -277,21 +308,21 @@ class ProcessAdmin extends AbstractAdmin
     }
 
     /**
-     * Get the value of handlerPRovider
+     * Get the value of handlerProvider
      */
-    public function getHandlerPRovider()
+    public function getHandlerProvider()
     {
-        return $this->handlerPRovider;
+        return $this->handlerProvider;
     }
 
     /**
-     * Set the value of handlerPRovider
+     * Set the value of handlerProvider
      *
      * @return  self
      */
-    public function setHandlerPRovider($handlerPRovider)
+    public function setHandlerProvider($handlerProvider)
     {
-        $this->handlerPRovider = $handlerPRovider;
+        $this->handlerProvider = $handlerProvider;
 
         return $this;
     }

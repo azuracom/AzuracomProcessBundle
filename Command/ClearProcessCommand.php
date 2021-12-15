@@ -42,7 +42,7 @@ class ClearProcessCommand extends Command
             ->setHelp('All process created before the delay will be deleted');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output) : int
     {
         $modify = $input->getOption('modify');
         if (substr($modify, 0, 1) != '-') {
@@ -58,7 +58,7 @@ class ClearProcessCommand extends Command
         $count = count($processes);
         $output->writeln(sprintf("%s process found", $count));
         if (!$count) {
-            return;
+            return self::SUCCESS;
         }
 
         foreach ($processes as $process) {
@@ -68,5 +68,7 @@ class ClearProcessCommand extends Command
         $output->write("Save...");
         $this->manager->flush();
         $output->write("<info>Done</info>\n");
+
+        return self::SUCCESS;
     }
 }
