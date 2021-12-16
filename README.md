@@ -398,8 +398,7 @@ https://symfony.com/doc/current/frontend.html
 1. Add datatable dependency
 
 ```console
-yarn add datatables.net
-yarn add datatables.net-bs
+yarn add simple-datatables
 ```
 
 2. Include css and js 
@@ -408,23 +407,22 @@ yarn add datatables.net-bs
 //assets/app.js
 require('./styles/app.css');
 
-import $ from 'jquery';
-window.jQuery = $;
-import DataTable from 'datatables.net';
-import 'datatables.net-bs';
-import 'datatables.net-buttons';
+import { DataTable } from "simple-datatables"
 
-window.initDatatable = function(element)
-{
-    $(element+" table").DataTable({
-        //some options
+window.initDatatable = function () {
+    const tables = document.querySelectorAll('.modal-log .table');
+    tables.forEach(function (table) {
+        const dataTable = new DataTable(table, {
+            perPage: 25,
+            perPageSelect: [10, 25, 50, 100, 200]
+        });
     });
 }
 ```
 
 ```css
 /* assets/styles/app.css */
-@import "~datatables.net-bs/css/dataTables.bootstrap.min.css";
+@import "~simple-datatables/dist/style.css";
 ```
 
 3. Sonata template
@@ -441,7 +439,7 @@ sonata_admin:
 {% extends "@SonataAdmin/standard_layout.html.twig" %}
 
 {% block stylesheets %}
-	{{ parent() }}
+    {{ parent() }}
     {{ encore_entry_link_tags('app') }}             
 {% endblock %}
 
