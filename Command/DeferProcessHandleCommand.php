@@ -78,7 +78,12 @@ class DeferProcessHandleCommand extends Command
             $this->manager->flush();
 
             $handler = $this->provider->getHandler($process);
-            $handler->handle();
+            try {
+                $handler->handle();
+            } catch (\Exception $e) {
+                $process->setStatus(ProcessInterface::STATUS_HAS_ERROR);
+                $handler->getHelper()->error(" Unexcepted error during handle: " . $e->getMessage());
+            }
         }
 
         $output->write("Save...");
