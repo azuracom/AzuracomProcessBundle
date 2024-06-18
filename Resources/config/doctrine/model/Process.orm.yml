@@ -44,7 +44,12 @@ Azuracom\ProcessBundle\Model\Process:
             nullable: true     
             
         resolved:
-            type: boolean   
+            type: boolean
+
+        useMessenger:
+            type: boolean
+            options:
+                default: false                 
 
         createdAt:
             type: datetime

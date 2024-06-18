@@ -60,6 +60,7 @@ class DeferProcessHandleCommand extends Command
             ->createQueryBuilder('p')
             ->where("p.createdAt >= :start AND p.createdAt <= :end")
             ->andWhere('p.status = :status')
+            ->andWhere('p.useMessenger = 0')
             ->setParameter('start', $start->setTime(0, 0, 0))
             ->setParameter('end', $end->setTime(23, 59, 59))
             ->setParameter('status', ProcessInterface::STATUS_WAITING_DEFERRED)

@@ -324,6 +324,8 @@ class ProcessAdmin extends  BaseAdmin
 
 ## Create a deferred process
 
+### With command + cron
+
 1. Create object and change status
 
 ```php
@@ -370,6 +372,56 @@ crontab -e
 
 ```console
 sudo service crontab reload
+```
+
+### With symfony messenger
+
+1. Create the process and tag with `useMessenger(true)`
+
+```php
+//src/Controller/ProductController.php
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
+use Azuracom\ProcessBundle\Messenger\ProcessMessage;
+use Sylius\Component\Resource\Factory\FactoryInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
+
+
+#[Route("/product")]
+class ProductController extends AbstractController
+{
+    #[Route("/import", name: "product_import")]
+    public function import(
+        FactoryInterface $processFactory,
+        MessageBusInterface $bus,
+    ): Response {
+        $em = $this->getDoctrine()->getManager();
+        $process = $processFactory->createNew();
+        $process->setType(ImportProductHandler::TYPE_IMPORT_INTERFACE);
+        $process->setStatus(ProcessInterface::STATUS_WAITING_DEFERRED);
+
+        //Don't forget this line to avoid command to handle this process
+        $process->setUseMessenger(true); 
+        
+        $em->persist($process);
+        $em->flush();
+
+        $bus->dispatch(new ProcessMessage($process->getId()));
+    }
+}
+```
+
+2. Configure the routing
+
+```yaml
+# config/packages/messenger.yaml
+framework:
+    messenger:
+        routing:
+            'Azuracom\ProcessBundle\Messenger\ProcessMessage': async
 ```
 
 ## Autoremove old process

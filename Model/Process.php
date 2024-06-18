@@ -97,6 +97,11 @@ class Process implements ResourceInterface, ProcessInterface
      */
     protected $queries = [];
 
+    /**
+     * @var boolean
+     */
+    protected $useMessenger = false;
+
 
     public function __construct($type = null, $autoStart = true)
     {
@@ -571,6 +576,30 @@ class Process implements ResourceInterface, ProcessInterface
                 break;
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * Get the value of useMessenger
+     *
+     * @return  boolean
+     */ 
+    public function useMessenger()
+    {
+        return $this->useMessenger;
+    }
+
+    /**
+     * Set the value of useMessenger
+     *
+     * @param  boolean  $useMessenger
+     *
+     * @return  self
+     */ 
+    public function setUseMessenger(bool $useMessenger)
+    {
+        $this->useMessenger = $useMessenger;
 
         return $this;
     }
