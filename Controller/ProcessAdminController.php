@@ -2,15 +2,20 @@
 
 namespace Azuracom\ProcessBundle\Controller;
 
+use Azuracom\ProcessBundle\Admin\ProcessAdmin;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Helper\ProcessHelperInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use Sonata\AdminBundle\Controller\CRUDController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+/**
+ * @property ProcessAdmin $admin
+ */
 class ProcessAdminController extends CRUDController
 {
 
@@ -48,8 +53,11 @@ class ProcessAdminController extends CRUDController
         return parent::redirectTo($request, $object);
     }
 
-    public function handleAction($id, HandlerProviderInterface $handlerProvider): Response
-    {
+    public function handleAction(
+        $id,
+        HandlerProviderInterface $handlerProvider,
+        EntityManagerInterface $em
+    ): Response {
         $object = $this->admin->getSubject();
         $this->admin->checkAccess('handle', $object);
 
@@ -60,7 +68,7 @@ class ProcessAdminController extends CRUDController
         $handler = $handlerProvider->getHandler($object);
         $handler->handle();
 
-        $this->getDoctrine()->getManager()->flush();
+        $em->flush();
 
         return new RedirectResponse($this->admin->generateUrl('list', ['id' => $object->getId()]));
     }
