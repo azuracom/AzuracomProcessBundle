@@ -7,6 +7,7 @@ use Azuracom\ProcessBundle\Form\StatusChoiceType;
 use Azuracom\ProcessBundle\Form\TypeChoiceType;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Helper\ProcessHelperInterface;
+use Azuracom\ProcessBundle\Messenger\ProcessMessage;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Datagrid\DatagridMapper;
@@ -22,6 +23,7 @@ use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Route\RouteCollectionInterface;
 use Sonata\Form\Type\ImmutableArrayType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Validator\Constraints\File;
 use Vich\UploaderBundle\Form\Type\VichFileType;
@@ -39,6 +41,9 @@ class ProcessAdmin extends AbstractAdmin
 
     /** @var TokenStorageInterface */
     private $tokenStorage;
+
+    /** @var MessageBusInterface|null */
+    private $messengerBus;
 
     protected function configureDefaultSortValues(array &$sortValues): void
     {
@@ -201,7 +206,6 @@ class ProcessAdmin extends AbstractAdmin
 
     protected function configureListFields(ListMapper $listMapper): void
     {
-        unset($this->listModes['mosaic']);
         $listMapper
             ->add('id')
             ->add('type', null, array(
@@ -257,6 +261,21 @@ class ProcessAdmin extends AbstractAdmin
         $this->setTemplate('log_list', "@AzuracomProcess/admin/process/log_list.html.twig");
         $this->setBaseControllerName(ProcessAdminController::class);
         $this->addChild($this->getConfigurationPool()->getAdminByAdminCode("azuracom_process.admin.process_resource_tag"), 'process');
+    }
+
+
+    public function postPersist($object): void
+    {
+        /** @var ProcessInterface */
+        $process = $object;
+
+        if ($process->getStatus() === ProcessInterface::STATUS_WAITING_DEFERRED && $process->useMessenger()) {
+            if (!$this->messengerBus) {
+                throw new \RuntimeException("No message bus found, try running 'composer require symfony/messenger'");
+            }
+
+            $this->messengerBus->dispatch(new ProcessMessage($process->getId()));
+        }
     }
 
     public function setTokenStorage($tokenStorage)
@@ -323,6 +342,13 @@ class ProcessAdmin extends AbstractAdmin
     public function setHandlerProvider($handlerProvider)
     {
         $this->handlerProvider = $handlerProvider;
+
+        return $this;
+    }
+
+    public function setMessengerBus(?MessageBusInterface $messengerBus)
+    {
+        $this->messengerBus = $messengerBus;
 
         return $this;
     }

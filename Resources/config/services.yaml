@@ -69,6 +69,10 @@ services:
         tags: ['form.type']
                         
 
+    #messenger
+    Azuracom\ProcessBundle\Messenger\ProcessMessageHandler:
+        tags: [messenger.message_handler]
+
     #aliases
     Azuracom\ProcessBundle\Handler\HandlerProviderInterface: '@azuracom_process.handler_provider'   
     Azuracom\ProcessBundle\Helper\ProcessHelperInterface: '@azuracom_process.helper'       

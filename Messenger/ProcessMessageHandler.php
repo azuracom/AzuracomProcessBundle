@@ -6,10 +6,7 @@ use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylius\Component\Resource\Repository\RepositoryInterface;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-
-#[AsMessageHandler]
 class ProcessMessageHandler
 {
     /** @var RepositoryInterface */

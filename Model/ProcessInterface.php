@@ -105,4 +105,8 @@ interface ProcessInterface
     public function addQuery(Query $query): self;
 
     public function removeQuery(Query $query): self;
+
+    public function useMessenger(): bool;
+
+    public function setUseMessenger(bool $useMessenger): self;
 }

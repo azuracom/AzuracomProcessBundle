@@ -585,7 +585,7 @@ class Process implements ResourceInterface, ProcessInterface
      *
      * @return  boolean
      */ 
-    public function useMessenger()
+    public function useMessenger(): bool
     {
         return $this->useMessenger;
     }
@@ -597,7 +597,7 @@ class Process implements ResourceInterface, ProcessInterface
      *
      * @return  self
      */ 
-    public function setUseMessenger(bool $useMessenger)
+    public function setUseMessenger(bool $useMessenger): self
     {
         $this->useMessenger = $useMessenger;
 

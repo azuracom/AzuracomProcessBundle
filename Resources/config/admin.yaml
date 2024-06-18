@@ -6,6 +6,7 @@ services:
             - [setProcessHelper, ['@azuracom_process.helper']]
             - [setHandlerProvider, ['@azuracom_process.handler_provider']]
             - [setTokenStorage, ['@security.token_storage']]
+            - [setMessengerBus, ['@?messenger.default_bus']]
         tags:
             - { name: sonata.admin, manager_type: orm, label: Process }
 
