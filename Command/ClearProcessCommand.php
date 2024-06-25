@@ -11,7 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class ClearProcessCommand extends Command
 {
-    protected static $defaultName = 'azuracom:process:clear';
 
     /** @var RepositoryInterface */
     private $repository;
@@ -31,12 +30,17 @@ class ClearProcessCommand extends Command
     protected function configure()
     {
         $this
+            ->setName('azuracom:process:clear')
             ->setDescription('Clear process using a delay')
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Process type (coma separated for multiple values)', null)
+            ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Process status (coma separated for multiple values)', null)
+            ->addOption('resolved', null, InputOption::VALUE_NEGATABLE, 'Only resolved process', null)
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Dry run mode, no process will be deleted')
             ->addOption(
                 'modify',
                 null,
                 InputOption::VALUE_REQUIRED,
-                "DateTime::modify first argument, if value doesn't contains '-' it will be added",
+                "DateTime::modify first argument, if value doesn't contains '-' it will be added, if value is a number it will be converted to days, default is 6 months",
                 self::DEFAULT_MODIFY
             )
             ->setHelp('All process created before the delay will be deleted');
@@ -45,14 +49,42 @@ class ClearProcessCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output) : int
     {
         $modify = $input->getOption('modify');
+
+        if(preg_match('/\d{+}/', $modify)) {
+            $modify = $modify . ' days';
+        }
+
         if (substr($modify, 0, 1) != '-') {
             $modify = '-' . $modify;
         }
+
         $date = (new \DateTime())->modify($modify);
-        $processes = $this->repository
+        $qb = $this->repository
             ->createQueryBuilder('p')
             ->where("p.createdAt <= :date")
-            ->setParameter('date', $date)
+            ->setParameter('date', $date);
+
+        $type = $input->getOption('type');
+        if ($type) {
+            $types = explode(',', $type);
+            $qb->andWhere("p.type IN (:types)")
+                ->setParameter('types', $types);
+        }
+
+        $status = $input->getOption('status');
+        if ($status) {
+            $statuses = explode(',', $status);
+            $qb->andWhere("p.status IN (:statuses)")
+                ->setParameter('statuses', $statuses);
+        }
+
+        $resolved = $input->getOption('resolved');
+        if($resolved !== null){
+            $qb->andWhere("p.resolved = :resolved")
+                ->setParameter('resolved', $resolved);
+        }
+
+        $processes = $qb
             ->getQuery()
             ->getResult();
         $count = count($processes);
@@ -63,6 +95,11 @@ class ClearProcessCommand extends Command
 
         foreach ($processes as $process) {
             $this->manager->remove($process);
+        }
+
+        if ($input->getOption('dry-run')) {
+            $output->writeln("<info>Dry run mode, no process will be deleted</info>");
+            return self::SUCCESS;
         }
 
         $output->write("Save...");
