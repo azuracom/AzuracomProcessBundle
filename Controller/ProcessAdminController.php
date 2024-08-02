@@ -11,6 +11,7 @@ use Sonata\AdminBundle\Controller\CRUDController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -94,6 +95,39 @@ class ProcessAdminController extends CRUDController
         return $this->renderWithExtraParams($template, [
             'rows' => $helper->getLogAsArray(),
             'object' => $object,
+        ]);
+    }
+
+    /**
+     * @param $id
+     */
+    public function exportLogAction($id): Response
+    {
+        $object = $this->admin->getSubject();
+
+        if (!$object) {
+            throw new NotFoundHttpException(sprintf('unable to find the object with id: %s', $id));
+        }
+
+        $this->admin->checkAccess('show', $object);
+        /** @var ProcessHelperInterface */
+        $helper = $this->container->get("azuracom_process.helper");
+        $helper->setSubject($object);
+
+
+        return new StreamedResponse(function () use ($helper) {
+            $handle = fopen('php://output', 'w+');
+            foreach ($helper->getLogAsArray() as $row) {
+                $values = array_map(function ($value) {
+                    return is_array($value) ? json_encode($value) : $value;
+                }, array_values($row));
+                fputcsv($handle, $values, ";", '"');
+            }
+            fclose($handle);
+
+        }, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="log.csv"',
         ]);
     }
 }

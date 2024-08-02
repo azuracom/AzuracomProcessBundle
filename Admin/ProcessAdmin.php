@@ -127,6 +127,7 @@ class ProcessAdmin extends AbstractAdmin
             ->remove('export')
             ->remove('edit')
             ->add('loadLog', $this->getRouterIdParameter() . '/load-log')
+            ->add('exportLog', $this->getRouterIdParameter() . '/export-log')
             ->add('handle', $this->getRouterIdParameter() . '/handle');
         if (count($this->getAllowedCreationTypes()) == 0) {
             $collection->remove('create');
@@ -232,6 +233,7 @@ class ProcessAdmin extends AbstractAdmin
             ->add(ListMapper::NAME_ACTIONS, null, array(
                 'actions' => array(
                     'log' => array('template' => '@AzuracomProcess/admin/process/list__action_log.html.twig'),
+                    'exportLog' => array('template' => '@AzuracomProcess/admin/process/list__action_export_log.html.twig'),
                     'file' => array('template' => '@AzuracomProcess/admin/process/list__action_file.html.twig'),
                     'tag' => array('template' => '@AzuracomProcess/admin/process/list__action_tag.html.twig'),
                     'delete' => [],
