@@ -27,7 +27,7 @@ class ClearProcessCommand extends Command
         $this->manager = $processManager;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('azuracom:process:clear')

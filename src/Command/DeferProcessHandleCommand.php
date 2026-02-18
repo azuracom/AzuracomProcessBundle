@@ -13,8 +13,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class DeferProcessHandleCommand extends Command
 {
-    protected static $defaultName = 'azuracom:process:defer-handle';
-
     /** @var RepositoryInterface */
     private $repository;
 
@@ -37,9 +35,10 @@ class DeferProcessHandleCommand extends Command
         $this->provider = $provider;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
+            ->setName('azuracom:process:defer-handle')
             ->setDescription('Deferred process handle')
             ->addOption(
                 'date',

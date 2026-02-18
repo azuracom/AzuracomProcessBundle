@@ -4,7 +4,6 @@ namespace Azuracom\ProcessBundle;
 
 use Azuracom\ProcessBundle\DependencyInjection\Compiler\ProcessHandlerPass;
 use Sylius\Bundle\ResourceBundle\AbstractResourceBundle;
-use Sylius\Bundle\ResourceBundle\ResourceBundleInterface;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 

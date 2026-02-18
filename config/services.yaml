@@ -19,10 +19,6 @@ services:
         class: Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler
 
 
-    #controllers
-    Azuracom\ProcessBundle\Controller\:
-        resource: '../../Controller'
-        tags: ['controller.service_arguments']
 
 
     #private services
@@ -65,7 +61,7 @@ services:
             - { name: 'console.command' } 
             
     Azuracom\ProcessBundle\Form\:
-        resource: '../../Form'
+        resource: '../src/Form'
         tags: ['form.type']
                         
 

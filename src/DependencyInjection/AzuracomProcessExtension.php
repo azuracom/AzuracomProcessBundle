@@ -12,12 +12,20 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class AzuracomProcessExtension extends AbstractResourceExtension
 {
-    public function load(array $config, ContainerBuilder $container)
+    public function load(array $config, ContainerBuilder $container): void
     {
         $config = $this->processConfiguration($this->getConfiguration([], $container), $config);
-        $loader = new YamlFileLoader($container, new FileLocator(dirname(__DIR__) . '/Resources/config'));
+        $loader = new YamlFileLoader($container, new FileLocator(dirname(__DIR__) . '../../../config'));
         $loader->load('services.yaml');
-        $loader->load('admin.yaml');
+
+
+        if (class_exists(\Sonata\AdminBundle\Controller\CRUDController::class)) {
+            $loader->load('sonata_admin.yaml');
+
+            //setUserClass to process admin
+            $definition = $container->getDefinition("azuracom_process.admin.process");
+            $definition->addMethodCall('setUserClass', [$config['user_class']]);
+        }
 
         //register sylius resource
         $this->registerResources('azuracom_process', $config['driver'], $config['resources'], $container);
@@ -29,25 +37,20 @@ class AzuracomProcessExtension extends AbstractResourceExtension
         //add status in parameter
         $oClass = new \ReflectionClass(ProcessInterface::class);
         $status = [];
-        foreach($oClass->getConstants() as $constName => $value){
-            if(preg_match("#^STATUS_#",$constName)){
-                $status[$value] = sprintf("azuracom_process.process.status.%s",$value);
+        foreach ($oClass->getConstants() as $constName => $value) {
+            if (preg_match("#^STATUS_#", $constName)) {
+                $status[$value] = sprintf("azuracom_process.process.status.%s", $value);
             }
         }
-        
+
         $container->setParameter('azuracom_process.status', $status);
 
 
         //set ORMUserMappingSubscriber userClassName argument
-        if($container->has(ORMUserMappingSubscriber::class)){
+        if ($container->has(ORMUserMappingSubscriber::class)) {
             $definition = $container->getDefinition(ORMUserMappingSubscriber::class);
-            $definition->replaceArgument(1,$config['user_class']);
+            $definition->replaceArgument(1, $config['user_class']);
         }
-
-
-        //setUserClass to process admin
-        $definition = $container->getDefinition("azuracom_process.admin.process");
-        $definition->addMethodCall('setUserClass',[$config['user_class']]);
     }
 
     protected function registerResources(
