@@ -10,10 +10,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AzuracomProcessBundle extends AbstractResourceBundle
 {
-    public function __construct()
-    {
-        $this->mappingFormat = ResourceBundleInterface::MAPPING_YAML;
-    }
     
     public function getSupportedDrivers(): array
     {

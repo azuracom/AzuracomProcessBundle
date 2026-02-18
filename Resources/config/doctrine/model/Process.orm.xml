@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping
+    xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:gedmo="http://gediminasm.org/schemas/orm/doctrine-extensions-mapping"
+    xsi:schemaLocation="
+        http://doctrine-project.org/schemas/orm/doctrine-mapping
+        https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd
+        http://gediminasm.org/schemas/orm/doctrine-extensions-mapping
+        http://gediminasm.org/schemas/orm/doctrine-extensions-mapping.xsd
+    "
+>
+    <mapped-superclass name="Azuracom\ProcessBundle\Model\Process" table="process">
+        <id name="id" type="integer" column="id">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="type" type="string" length="255"/>
+
+        <field name="status" type="string" length="255" nullable="true"/>
+        <field name="uniqueId" type="string" length="255" nullable="true"/>
+        <field name="originalFilename" type="string" length="255" nullable="true"/>
+        <field name="filename" type="string" length="255" nullable="true"/>
+
+        <field name="options" type="json" nullable="true"/>
+
+        <field name="startedAt" type="datetime" nullable="true"/>
+        <field name="endedAt" type="datetime" nullable="true"/>
+
+        <field name="resolved" type="boolean"/>
+
+        <field name="useMessenger" type="boolean">
+            <options>
+                <option name="default">false</option>
+            </options>
+        </field>
+
+        <field name="createdAt" type="datetime" nullable="true">
+            <gedmo:timestampable on="create"/>
+        </field>
+
+        <field name="updatedAt" type="datetime" nullable="true">
+            <gedmo:timestampable on="update"/>
+        </field>
+
+        <one-to-many
+            field="resourceTags"
+            target-entity="Azuracom\ProcessBundle\Model\ProcessResourceTagInterface"
+            mapped-by="process"
+            orphan-removal="true"
+        >
+            <cascade>
+                <cascade-persist/>
+            </cascade>
+        </one-to-many>
+
+        <many-to-one field="user" target-entity="Symfony\Component\Security\Core\User\UserInterface">
+            <join-column name="user_id" referenced-column-name="id"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>
