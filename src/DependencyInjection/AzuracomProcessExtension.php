@@ -9,9 +9,33 @@ use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 
-class AzuracomProcessExtension extends AbstractResourceExtension
+class AzuracomProcessExtension extends AbstractResourceExtension implements PrependExtensionInterface
 {
+
+    public function prepend(ContainerBuilder $container): void
+    {
+        $bundleRoot = \dirname(__DIR__, 2); // .../process-bundle/
+        $translationsPath = $bundleRoot . '/translations';
+
+        if (!is_dir($translationsPath)) {
+            return;
+        }
+
+        $container->prependExtensionConfig('framework', [
+            'translator' => [
+                'paths' => [$translationsPath],
+            ],
+        ]);
+
+        $container->prependExtensionConfig('twig', [
+            'paths' => [
+                \dirname(__DIR__, 2) . '/templates' => 'AzuracomProcess',
+            ],
+        ]);
+    }
+
     public function load(array $config, ContainerBuilder $container): void
     {
         $config = $this->processConfiguration($this->getConfiguration([], $container), $config);

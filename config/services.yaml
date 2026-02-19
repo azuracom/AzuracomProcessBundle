@@ -23,10 +23,12 @@ services:
 
     #private services
     #Listeners
-    Azuracom\ProcessBundle\EventListener\ProcessSubscriber:
+    Azuracom\ProcessBundle\EventListener\DeleteProcessLogFileListener:
         public: false
+        autowire: true
+        autoconfigure: true
         tags:
-            - { name: 'doctrine.event_subscriber' }  
+            - { name: 'doctrine.event_listener', event: 'postRemove', connection: 'default' }  
 
     Azuracom\ProcessBundle\EventListener\ORMUserMappingSubscriber:
         arguments: ['@sylius.resource_registry',null]

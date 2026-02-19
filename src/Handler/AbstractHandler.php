@@ -35,10 +35,15 @@ abstract class AbstractHandler implements HandlerInterface
                 $types[] = $constValue;
             }
         }
+
+        if(empty($types)) {
+            $types[] = static::class;
+        }
+
         return $types;
     }
 
-    public static function getTypeLabel(string $type): string
+    public static function getTypeLabel(?string $type = null): string
     {
         return "app.process.type." . $type;
     }

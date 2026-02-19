@@ -9,7 +9,7 @@ Installation
     //...
     "require": {
         //...
-        "azuracom/process-bundle": "^1.0"
+        "azuracom/process-bundle": "^2.0"
     },
     "repositories":[
         {
@@ -75,15 +75,71 @@ Configure vich uploader in the `config/packages/vich_uploader.yaml` file of your
 
 ```yaml
 vich_uploader:
-    db_driver: orm
-    mappings:
-        process:
-            uri_prefix: /files/process
-            upload_destination: '%kernel.project_dir%/public/files/process'
-            inject_on_load:     false
-            delete_on_remove:   true
-            namer: vich_uploader.namer_uniqid  
-```             
+  db_driver: orm
+  storage: flysystem
+
+  metadata:
+    type: attribute
+  mappings:
+    process:
+      uri_prefix: '/process'
+      upload_destination: process.storage
+      # Will rename uploaded files using a uniqueid as a suffix.
+      namer: Vich\UploaderBundle\Naming\SmartUniqueNamer 
+```    
+
+Configure flysystem
+
+```yaml
+# Read the documentation at https://github.com/thephpleague/flysystem-bundle/blob/master/docs/1-getting-started.md
+flysystem:
+    storages:
+        process.storage:
+            adapter: 'local'
+            options:
+                directory: '%kernel.project_dir%/var/storage/process'        
+```   
+
+Configure mapping for user class  in the `config/packages/doctrine.yaml` file of your project:
+
+```yaml
+doctrine:
+    orm:
+        resolve_target_entities:
+            Symfony\Component\Security\Core\User\UserInterface: App\Entity\User   
+```  
+
+
+Run migrations
+```sh
+bin/console make:migration
+bin/console doctrine:migration:migrate
+```  
+
+If you use docker + localstorage create a volume corresponding to the file location in prod
+
+
+```yaml
+#compose.prod.yaml
+# Production environment override
+services:
+  php:
+    # ...
+    volumes:           
+      - process_logs:/app/var/log/process
+      - process_files:/app/var/storage/process
+
+  messenger:
+    # ...
+    volumes:           
+      - process_logs:/app/var/log/process
+      - process_files:/app/var/storage/process
+
+
+volumes:
+  process_logs:
+  process_files:   
+```  
 
 Usage
 ============
@@ -109,8 +165,7 @@ class ImportProductHandler extends AbstractHandler
     //each tpye const value should be unique in all project
     const TYPE_IMPORT_INTERFACE = 'product_import_interface';
     const TYPE_IMPORT_EMAIL = 'product_import_email';
-    //best practice: if class only handler one type, use class name
-    //const TYPE_DEFAULT = self::class
+    //best practice: if not const with TYPE_ exists, the type = static::class (e.g. full classname)
 
     /** @var EntityManagerInterface */
     protected $em;
@@ -181,14 +236,12 @@ use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
 use App\Process\ImportProductHandler;
 
-/**
- * @Route("/product")
- */
+
+#[Route('/product')]
 class ProductController extends AbstractController
 {
-    /**
-     * @Route("/import",name="product_import")
-     */
+
+    #[Route("/import",name="product_import")]
     public function import(
         HandlerProviderInterface $provider,
         FactoryInterface $processFactory
@@ -336,14 +389,11 @@ use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
 
-/**
- * @Route("/product")
- */
+
+#[Route('/product')]
 class ProductController extends AbstractController
 {
-    /**
-     * @Route("/import",name="product_import")
-     */
+    #[Route("/import",name="product_import")]
     public function import(FactoryInterface $processFactory)
     {
         $em = $this->getDoctrine()->getManager();
@@ -421,24 +471,53 @@ class ProductController extends AbstractController
 framework:
     messenger:
         routing:
-            'Azuracom\ProcessBundle\Messenger\ProcessMessage': async
+            Azuracom\ProcessBundle\Messenger\ProcessMessage: async
 ```
 
 ## Autoremove old process
-```console
-crontab -e
-```
 
-```console
-#every day at 8am
-0 8 * * * php /path/to/project/bin/console azuracom:process:clear #default delay is  6 month
-#manually set delay
-#0 8 * * * php /path/to/project/bin/console azuracom:process:clear --modify='1 month'
-```
+Use symfony scheduler to run a clear command
 
+```php
+//src/Schedule.php
 
-```console
-sudo service crontab reload
+<?php
+
+namespace App;
+
+use Symfony\Component\Console\Messenger\RunCommandMessage;
+use Symfony\Component\Scheduler\Attribute\AsSchedule;
+use Symfony\Component\Scheduler\RecurringMessage;
+use Symfony\Component\Scheduler\Schedule as SymfonySchedule;
+use Symfony\Component\Scheduler\ScheduleProviderInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+
+#[AsSchedule]
+class Schedule implements ScheduleProviderInterface
+{
+    public function __construct(
+        private CacheInterface $cache,
+    ) {}
+
+    public function getSchedule(): SymfonySchedule
+    {
+        $schedule = (new SymfonySchedule())
+            ->stateful($this->cache) // ensure missed tasks are executed
+            ->processOnlyLastMissedRun(true); // ensure only last missed task is run
+
+        // add your own tasks here
+        // see https://symfony.com/doc/current/scheduler.html#attaching-recurring-messages-to-a-schedule
+
+        $schedule
+            //Clear all succeded process of type xxx older than 2 days
+            ->add(RecurringMessage::cron('0 0 * * *', new RunCommandMessage(
+                'azuracom:process:clear --type=xxx --status=succeded --modify=\'2 days\''
+            )))
+
+        return $schedule;
+    }
+}
+
 ```
 
 ## Use datatable for log consultation in admin
@@ -450,54 +529,189 @@ https://symfony.com/doc/current/frontend.html
 1. Add datatable dependency
 
 ```console
-yarn add simple-datatables
+yarn add -D simple-datatables
 ```
 
-2. Include css and js 
+2. Crate a stimul controller + ensure stimulus is booted in the admin
 
 ```js
-//assets/app.js
-require('./styles/app.css');
+// assets/controlers/datatable_controller.js
+import { Controller } from '@hotwired/stimulus';
+import { DataTable, exportCSV } from "simple-datatables"
+import "simple-datatables/dist/style.css";
 
-import { DataTable } from "simple-datatables"
+/* stimulusFetch: 'lazy' */
+export default class extends Controller {
 
-window.initDatatable = function () {
-    const tables = document.querySelectorAll('.modal-log .table');
-    tables.forEach(function (table) {
-        const dataTable = new DataTable(table, {
-            perPage: 25,
+    static values = {
+        closest: String,
+        options: Object
+    };
+
+    static targets = ['table', 'exportBtn'];
+
+    connect() {
+        const options = this.hasOptionsValue ? this.optionsValue : {};
+        const element = this.hasTableTarget ? this.tableTarget : this.element;
+
+        this.dataTable = new DataTable('#' + element.id, {
+            ...options,
             perPageSelect: [10, 25, 50, 100, 200]
         });
-    });
+    }
+
+    exportBtnTargetConnected(btn) {
+        btn.style.display = 'block';
+        btn.addEventListener('click', this.export);
+    }
+
+    exportBtnTargetDisonnected(btn) {
+        btn.removeEventListener('click', this.export);
+    }
+
+    export = (e) => {
+        e.preventDefault();
+        exportCSV(this.dataTable, {
+            download: true,
+            lineDelimiter: "\n",
+            columnDelimiter: ";",
+            filename: "export.csv"
+        })
+    }
+
+    disconnect() {
+        this.dataTable.destroy();
+    }
 }
+
 ```
 
-```css
-/* assets/styles/app.css */
-@import "~simple-datatables/dist/style.css";
+### Use easy admin
+
+An abstract controller exists in `Azuracom\ProcessBundle\Controller\BaseProcessCrudController` that sould extends
+
+```php
+<?php
+
+namespace App\Controller\Admin;
+
+use App\Process\ImportClientHandler;
+use Azuracom\ProcessBundle\Controller\BaseProcessCrudController;
+use Azuracom\ProcessBundle\Model\ProcessInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminAction;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
+use League\Flysystem\FilesystemOperator;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class ProcessCrudController extends BaseProcessCrudController
+{
+    public function configureActions(Actions $actions): Actions
+    {
+        $actions = parent::configureActions($actions);
+
+        $downloadAction = Action::new('download', 'Télécharger fichier', 'mdi:download')
+            ->displayIf(function (ProcessInterface $process) {
+                return $process->getFilename() !== null;
+            })
+            ->linkToCrudAction('download');
+
+        $actions->add(Crud::PAGE_INDEX, $downloadAction);
+        $actions->add(Crud::PAGE_DETAIL, $downloadAction);
+
+        return $actions;
+    }
+
+    // Download action is dependent on the storage, so we inject the filesystem operator directly in the action
+    #[AdminAction(routePath: '/download', routeName: 'download_process')]
+    public function download(
+        AdminContext $context,
+        #[Autowire(service: 'process.storage')]
+        FilesystemOperator $filesystemOperator,
+    ): Response {
+        /** @var ProcessInterface $process */
+        $process = $context->getEntity()->getInstance();
+        $path = $process->getFilename();
+
+        // Optionnel : si tu veux un type plus précis
+        $mimeType = $filesystemOperator->mimeType($path) ?? 'application/octet-stream';
+
+        $response = new StreamedResponse(function () use ($path, $filesystemOperator) {
+            $stream = $filesystemOperator->readStream($path);
+
+            if ($stream === false) {
+                // Ici on ne peut pas "return Response", on est dans le callback.
+                // On déclenche une exception -> Symfony renverra 500 (à adapter si tu veux 404)
+                throw new \RuntimeException('Unable to open stream for download.');
+            }
+
+            // Stream vers la sortie HTTP sans charger en mémoire
+            stream_copy_to_stream($stream, fopen('php://output', 'wb'));
+
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        });
+
+        $disposition = $response->headers->makeDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $process->getOriginalFilename()
+        );
+
+        $response->headers->set('Content-Type', $mimeType);
+        $response->headers->set('Content-Disposition', $disposition);
+
+        // Optionnel : taille si dispo (utile pour barre de progression)
+        try {
+            $response->headers->set('Content-Length', (string) $filesystemOperator->fileSize($path));
+        } catch (\Throwable) {
+            // ignore si l'adapter ne supporte pas/échoue
+        }
+
+
+        return $response;
+    }
+
+    protected function getCreateChoices(): array
+    {
+        return [
+            [
+                'value' => ImportClientHandler::class,
+                'label' => ImportClientHandler::getTypeLabel()
+            ]
+        ];
+    }
+}
+
+
 ```
 
-3. Sonata template
+And create a link in your dashboard
 
-```yaml
-# config/packages/sonata_admin.yaml
-sonata_admin:
-    templates:
-        layout: back/layout_admin.html.twig 
-```
+```php
 
-```twig
-{# templates/back/layout_admin.html.twig  #}
-{% extends "@SonataAdmin/standard_layout.html.twig" %}
+<?php
 
-{% block stylesheets %}
-    {{ parent() }}
-    {{ encore_entry_link_tags('app') }}             
-{% endblock %}
+namespace App\Controller\Admin;
 
-{% block javascripts %}
-    {{ encore_entry_script_tags('app') }} 
-    {{ parent() }}
-  </script>
-{% endblock %}
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
+use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use Symfony\Component\HttpFoundation\Response;
+
+#[AdminDashboard(routePath: '/admin', routeName: 'admin')]
+class DashboardController extends AbstractDashboardController
+{
+    public function configureMenuItems(): iterable
+    {
+        yield MenuItem::linkToDashboard('Dashboard', 'mdi:home');
+        yield MenuItem::linkTo(ProcessCrudController::class, 'Import/Export', 'mdi:swap-horizontal');
+        yield MenuItem::linkToRoute('Retour au site', 'fa:arrow-left', 'app_home');
+    }
+}
 ```

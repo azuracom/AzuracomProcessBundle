@@ -1,0 +1,38 @@
+{% extends "@EasyAdmin/page/content.html.twig" %}
+
+{% block main %}
+
+    {% if title is defined %}
+        <h1>{{ title }}</h1>
+    {% endif %}
+    <div class="row" data-controller="datatable">   
+        <div class="flex mb-5">
+
+            <button class="btn btn-primary" data-datatable-target="exportBtn" style="display:none">
+                Export
+            </button>
+        </div> 
+        <table class="table log-table" data-datatable-target="table" id="log-table">
+            <thead>
+                <tr>
+                    <th>{{ "azuracom_process.log.label.date"|trans }}</th>
+                    <th>{{ "azuracom_process.log.label.status"|trans }}</th>
+                    <th>{{ "azuracom_process.log.label.message"|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row.datetime.date is defined ? row.datetime.date|date('d/m/Y H:i:s')  : row.datetime|date('d/m/Y H:i:s') }}</td>
+                        <td>
+                            <span class="badge" style="background-color: {{ object.getStatusColorStatic(row.level_name) }}; color: #fff;">
+                                {{ row.level_name }}
+                            </span>
+                        </td>
+                        <td>{{ row.message }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

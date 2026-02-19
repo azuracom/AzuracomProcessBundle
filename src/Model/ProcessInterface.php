@@ -47,7 +47,7 @@ interface ProcessInterface
 
     public function getUser(): ?UserInterface;
 
-    public function setFile(File $file = null): self;
+    public function setFile(?File $file = null): self;
 
     public function getFile(): ?File;
 
@@ -71,7 +71,7 @@ interface ProcessInterface
 
     public function getOption(string $key);
 
-    public function setOriginalFilename(string $originalFilename = null): self;
+    public function setOriginalFilename(?string $originalFilename = null): self;
 
     public function getOriginalFilename(): ?string;
 

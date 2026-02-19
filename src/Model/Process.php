@@ -187,18 +187,18 @@ class Process implements ResourceInterface, ProcessInterface
     {
         $status = strtolower($status);
         if (preg_match("#warning#", $status)) {
-            return 'warning';
+            return '#ffc107';
         }
 
         if (preg_match("#error#", $status)) {
-            return 'danger';
+            return '#dc3545';
         }
 
         if (preg_match("#succeded|notice#", $status)) {
-            return 'success';
+            return '#28a745';
         }
 
-        return 'default';
+        return '#6c757d';
     }
 
 
@@ -268,18 +268,18 @@ class Process implements ResourceInterface, ProcessInterface
      * must be able to accept an instance of 'File' as the bundle will inject one here
      * during Doctrine hydration.
      *
-     * @param File|\Symfony\Component\HttpFoundation\File\UploadedFile $image
+     * @param File|\Symfony\Component\HttpFoundation\File\UploadedFile|null $file
      *
      * @return Process
      */
-    public function setFile(File $file = null): ProcessInterface
+    public function setFile(?File $file = null): ProcessInterface
     {
         $this->file = $file;
 
         if (null !== $file) {
             // It is required that at least one field changes if you are using doctrine
             // otherwise the event listeners won't be called and the file is lost
-            $this->updatedAt = new \DateTimeImmutable();
+            $this->updatedAt = new \DateTime();
 
             if ($file instanceof UploadedFile) {
                 $this->originalFilename = $file->getClientOriginalName();
