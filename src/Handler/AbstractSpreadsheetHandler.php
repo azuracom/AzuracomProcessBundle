@@ -4,9 +4,10 @@ namespace Azuracom\ProcessBundle\Handler;
 
 use Azuracom\ProcessBundle\Helper\Counter;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
-use Azuracom\SpreadsheetToObject\Helper\DataMatcher;
-use Azuracom\SpreadsheetToObject\Spreadsheet\HandlerInterface;
+use Azuracom\SpreadsheetToObjectBundle\Helper\DataMatcher;
+use Azuracom\SpreadsheetToObjectBundle\Spreadsheet\HandlerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use League\Flysystem\FilesystemOperator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -22,8 +23,8 @@ abstract class AbstractSpreadsheetHandler extends AbstractHandler
         protected ?EntityManagerInterface $em = null,
         protected ?FileSystemStorage $fileSystemStorage = null,
         protected ?TranslatorInterface $translator = null,
-    ) {
-    }
+        protected ?FilesystemOperator $processStorage = null,
+    ) {}
 
     public function configure(): void
     {
@@ -35,13 +36,30 @@ abstract class AbstractSpreadsheetHandler extends AbstractHandler
     public function handle(): void
     {
         $this->process->startProcess();
-        
         $url = $this->fileSystemStorage->resolvePath($this->process, 'file', null, false);
-        $objReader = null;
 
         //open file
         try {
-            $objReader = IOFactory::createReaderForFile($url);
+            // If process storage is configured, read the file from there. This is useful when using a remote storage like S3, as it avoids downloading the file to the local filesystem first.
+            if ($this->processStorage) {
+                $stream = $this->processStorage->readStream($this->process->getFilename());
+
+                if ($stream === false) {
+                    throw new \RuntimeException('Unable to read stream');
+                }
+
+                $url = tempnam(sys_get_temp_dir(), 'spreadsheet');
+
+                $tmpHandle = fopen($url, 'wb');
+                stream_copy_to_stream($stream, $tmpHandle);
+
+                fclose($stream);
+                fclose($tmpHandle);
+
+                $objReader = IOFactory::createReaderForFile($url);
+            } else {
+                $objReader = IOFactory::createReaderForFile($url);
+            }
         } catch (\Exception $e) {
             $this->helper->error($this->translator->trans("azuracom_process.errors.file_openning_failed"));
         }
@@ -59,20 +77,24 @@ abstract class AbstractSpreadsheetHandler extends AbstractHandler
         }
 
         if ($this->process->getStatus() === ProcessInterface::STATUS_HAS_ERROR) {
-
-            foreach ($this->getClearClassNames() as $className) {
-                $this->em->clear($className);
-            }
-
-            //if user was clear from the entity manager, so reset manually process user with a reference to avoid cascade persit bug
-            if ($user = $this->process->getUser()) {
-                $this->process->setUser($this->em->getReference(get_class($user), $user->getId()));
-            }
+           $this->clear();
         } else {
             $this->helper->info($this->getSuccessMessage());
         }
 
         $this->process->endProcess();
+    }
+
+    protected function clear(): void
+    {
+        foreach ($this->getClearClassNames() as $className) {
+            $this->em->clear($className);
+        }
+
+        //if user was clear from the entity manager, so reset manually process user with a reference to avoid cascade persit bug
+        if ($user = $this->process->getUser()) {
+            $this->process->setUser($this->em->getReference(get_class($user), $user->getId()));
+        }
     }
 
     abstract protected function read(Worksheet $worksheet): void;

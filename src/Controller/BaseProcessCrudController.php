@@ -17,11 +17,14 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
+use EasyCorp\Bundle\EasyAdminBundle\Filter\DateTimeFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -63,10 +66,29 @@ abstract class BaseProcessCrudController extends AbstractCrudController
 
     public function configureFilters(Filters $filters): Filters
     {
+
+        $statusChoices = [];
+        foreach ($this->processHelper->getStatusList() as $statusKey => $statusLabel) {
+            $statusChoices[$this->translator?->trans($statusLabel) ?? $statusLabel] = $statusKey;
+        }
+
         return $filters
-            ->add('status')
+            ->add(
+                ChoiceFilter::new('status', 'Statut')
+                    ->setChoices($statusChoices)
+            )
             ->add('originalFilename')
-            ->add('useMessenger');
+            ->add('useMessenger')
+            ->add('resolved')
+            ->add(DateTimeFilter::new('createdAt', 'Date de création'))
+            ->add('user')
+        ;
+    }
+
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud
+            ->setDefaultSort(['updatedAt' => 'DESC']);
     }
 
     public function configureFields(string $pageName): iterable
@@ -84,7 +106,7 @@ abstract class BaseProcessCrudController extends AbstractCrudController
             });
 
         yield TextField::new('uniqueId', 'ID unique')
-            ->hideOnForm();
+            ->onlyOnDetail();
 
         yield TextField::new('file', 'Fichier')
             ->onlyOnForms()
@@ -94,6 +116,9 @@ abstract class BaseProcessCrudController extends AbstractCrudController
             ]);
 
         yield TextField::new('originalFilename', 'Nom original')
+            ->hideOnForm();
+
+        yield AssociationField::new('user', 'Utilisateur')
             ->hideOnForm();
 
         yield BooleanField::new('useMessenger', 'Traitement asynchrones')
@@ -130,8 +155,17 @@ abstract class BaseProcessCrudController extends AbstractCrudController
                 ->onlyOnForms();
         }
 
+        yield DateField::new('startedAt', 'Date de début')
+            ->onlyOnDetail()
+            ->setFormat('dd/MM/yyyy HH:mm:ss');
+
+        yield DateField::new('endedAt', 'Date de fin')
+            ->onlyOnDetail()
+            ->setFormat('dd/MM/yyyy HH:mm:ss');
+
         yield DateField::new('createdAt', 'Date de création')
             ->hideOnForm()
+            ->hideOnIndex()
             ->setFormat('dd/MM/yyyy HH:mm:ss');
 
         yield DateField::new('updatedAt', 'Date de mise à jour')
@@ -172,7 +206,7 @@ abstract class BaseProcessCrudController extends AbstractCrudController
         $logsAction = Action::new('logs', 'Logs', 'mdi:format-list-bulleted')
             ->linkToCrudAction('logs')
             ->displayIf(function (ProcessInterface $process) {
-                return $process->getStatus() !== ProcessInterface::STATUS_NEW;
+                return $process->getStartedAt() !== null;
             });
 
         $actions->add(Crud::PAGE_INDEX, $logsAction);
@@ -197,6 +231,7 @@ abstract class BaseProcessCrudController extends AbstractCrudController
         }
 
         $handler->handle($process);
+        $entityManager->persist($process);
         $entityManager->flush();
 
         $detailsUrl = $this->adminUrlGenerator
@@ -300,8 +335,10 @@ abstract class BaseProcessCrudController extends AbstractCrudController
 
     public function createEntity(string $entityFqcn)
     {
+        /** @var ProcessInterface $process */
         $process = $this->processFactory->createNew();
         $process->setType($this->getContext()->getRequest()->query->get('type'));
+        $process->setUseMessenger(true); //default to async process, but can be override by form
         return $process;
     }
 }
