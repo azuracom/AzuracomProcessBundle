@@ -8,7 +8,7 @@ use Azuracom\ProcessBundle\Messenger\ProcessMessage;
 use Azuracom\ProcessBundle\Model\Process;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminAction;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -26,9 +26,12 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\DateTimeFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use League\Flysystem\FilesystemOperator;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Validator\Constraints\File;
@@ -212,11 +215,21 @@ abstract class BaseProcessCrudController extends AbstractCrudController
         $actions->add(Crud::PAGE_INDEX, $logsAction);
         $actions->add(Crud::PAGE_DETAIL, $logsAction);
 
+        $downloadAction = Action::new('download', 'Télécharger fichier', 'mdi:download')
+            ->displayIf(function (ProcessInterface $process) {
+                return $process->getFilename() !== null;
+            })
+            ->linkToCrudAction('download');
+
+        $actions->add(Crud::PAGE_INDEX, $downloadAction);
+        $actions->add(Crud::PAGE_DETAIL, $downloadAction);
+
         return $actions;
     }
 
 
-    #[AdminAction(routePath: '/handle', routeName: 'handle_process')]
+
+    #[AdminRoute(path: '/handle', name: 'handle_process')]
     public function handle(
         AdminContext $context,
         HandlerProviderInterface $handlerProvider,
@@ -231,7 +244,6 @@ abstract class BaseProcessCrudController extends AbstractCrudController
         }
 
         $handler->handle($process);
-        $entityManager->persist($process);
         $entityManager->flush();
 
         $detailsUrl = $this->adminUrlGenerator
@@ -242,7 +254,7 @@ abstract class BaseProcessCrudController extends AbstractCrudController
         return new RedirectResponse($detailsUrl);
     }
 
-    #[AdminAction(routePath: '/logs', routeName: 'logs_process')]
+    #[AdminRoute(path: '/logs', name: 'logs_process')]
     public function logs(
         AdminContext $context,
     ): Response {
@@ -256,6 +268,60 @@ abstract class BaseProcessCrudController extends AbstractCrudController
             'rows' => $this->processHelper->getLogAsArray(),
             'object' => $process,
         ]);
+    }
+
+    // Download action is dependent on the storage, so we inject the filesystem operator directly in the action
+    #[AdminRoute(path: '/download', name: 'download_process')]
+    public function download(
+        AdminContext $context,
+        ?FilesystemOperator $processStorage = null,
+    ): Response {
+
+        if (!$processStorage) {
+            throw new \RuntimeException("No filesystem operator found for process storage");
+        }
+
+        /** @var ProcessInterface $process */
+        $process = $context->getEntity()->getInstance();
+        $path = $process->getFilename();
+
+        // Optionnel : si tu veux un type plus précis
+        $mimeType = $processStorage->mimeType($path) ?? 'application/octet-stream';
+
+        $response = new StreamedResponse(function () use ($path, $processStorage) {
+            $stream = $processStorage->readStream($path);
+
+            if ($stream === false) {
+                // Ici on ne peut pas "return Response", on est dans le callback.
+                // On déclenche une exception -> Symfony renverra 500 (à adapter si tu veux 404)
+                throw new \RuntimeException('Unable to open stream for download.');
+            }
+
+            // Stream vers la sortie HTTP sans charger en mémoire
+            stream_copy_to_stream($stream, fopen('php://output', 'wb'));
+
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        });
+
+        $disposition = $response->headers->makeDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $process->getOriginalFilename()
+        );
+
+        $response->headers->set('Content-Type', $mimeType);
+        $response->headers->set('Content-Disposition', $disposition);
+
+        // Optionnel : taille si dispo (utile pour barre de progression)
+        try {
+            $response->headers->set('Content-Length', (string) $processStorage->fileSize($path));
+        } catch (\Throwable) {
+            // ignore si l'adapter ne supporte pas/échoue
+        }
+
+
+        return $response;
     }
 
     protected function getRedirectResponseAfterSave(AdminContext $context, string $action): RedirectResponse
@@ -333,7 +399,7 @@ abstract class BaseProcessCrudController extends AbstractCrudController
 
 
 
-    public function createEntity(string $entityFqcn)
+    public function createEntity(string $entityFqcn): object
     {
         /** @var ProcessInterface $process */
         $process = $this->processFactory->createNew();

@@ -597,85 +597,9 @@ namespace App\Controller\Admin;
 
 use App\Process\ImportClientHandler;
 use Azuracom\ProcessBundle\Controller\BaseProcessCrudController;
-use Azuracom\ProcessBundle\Model\ProcessInterface;
-use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminAction;
-use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
-use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
-use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
-use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
-use League\Flysystem\FilesystemOperator;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProcessCrudController extends BaseProcessCrudController
 {
-    public function configureActions(Actions $actions): Actions
-    {
-        $actions = parent::configureActions($actions);
-
-        $downloadAction = Action::new('download', 'Télécharger fichier', 'mdi:download')
-            ->displayIf(function (ProcessInterface $process) {
-                return $process->getFilename() !== null;
-            })
-            ->linkToCrudAction('download');
-
-        $actions->add(Crud::PAGE_INDEX, $downloadAction);
-        $actions->add(Crud::PAGE_DETAIL, $downloadAction);
-
-        return $actions;
-    }
-
-    // Download action is dependent on the storage, so we inject the filesystem operator directly in the action
-    #[AdminAction(routePath: '/download', routeName: 'download_process')]
-    public function download(
-        AdminContext $context,
-        #[Autowire(service: 'process.storage')]
-        FilesystemOperator $filesystemOperator,
-    ): Response {
-        /** @var ProcessInterface $process */
-        $process = $context->getEntity()->getInstance();
-        $path = $process->getFilename();
-
-        // Optionnel : si tu veux un type plus précis
-        $mimeType = $filesystemOperator->mimeType($path) ?? 'application/octet-stream';
-
-        $response = new StreamedResponse(function () use ($path, $filesystemOperator) {
-            $stream = $filesystemOperator->readStream($path);
-
-            if ($stream === false) {
-                // Ici on ne peut pas "return Response", on est dans le callback.
-                // On déclenche une exception -> Symfony renverra 500 (à adapter si tu veux 404)
-                throw new \RuntimeException('Unable to open stream for download.');
-            }
-
-            // Stream vers la sortie HTTP sans charger en mémoire
-            stream_copy_to_stream($stream, fopen('php://output', 'wb'));
-
-            if (is_resource($stream)) {
-                fclose($stream);
-            }
-        });
-
-        $disposition = $response->headers->makeDisposition(
-            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-            $process->getOriginalFilename()
-        );
-
-        $response->headers->set('Content-Type', $mimeType);
-        $response->headers->set('Content-Disposition', $disposition);
-
-        // Optionnel : taille si dispo (utile pour barre de progression)
-        try {
-            $response->headers->set('Content-Length', (string) $filesystemOperator->fileSize($path));
-        } catch (\Throwable) {
-            // ignore si l'adapter ne supporte pas/échoue
-        }
-
-
-        return $response;
-    }
 
     protected function getCreateChoices(): array
     {
