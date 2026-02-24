@@ -37,6 +37,7 @@ abstract class AbstractSpreadsheetHandler extends AbstractHandler
     {
         $this->process->startProcess();
         $url = $this->fileSystemStorage->resolvePath($this->process, 'file', null, false);
+        $tempUrl = null;
 
         //open file
         try {
@@ -48,15 +49,16 @@ abstract class AbstractSpreadsheetHandler extends AbstractHandler
                     throw new \RuntimeException('Unable to read stream');
                 }
 
-                $url = tempnam(sys_get_temp_dir(), 'spreadsheet');
+                $tempUrl = tempnam(sys_get_temp_dir(), 'spreadsheet');
+                $url = $tempUrl; // Use the temp file as the URL for PhpSpreadsheet
 
-                $tmpHandle = fopen($url, 'wb');
+                $tmpHandle = fopen($tempUrl, 'wb');
                 stream_copy_to_stream($stream, $tmpHandle);
 
                 fclose($stream);
                 fclose($tmpHandle);
 
-                $objReader = IOFactory::createReaderForFile($url);
+                $objReader = IOFactory::createReaderForFile($tempUrl);
             } else {
                 $objReader = IOFactory::createReaderForFile($url);
             }
@@ -77,9 +79,13 @@ abstract class AbstractSpreadsheetHandler extends AbstractHandler
         }
 
         if ($this->process->getStatus() === ProcessInterface::STATUS_HAS_ERROR) {
-           $this->clear();
+            $this->clear();
         } else {
             $this->helper->info($this->getSuccessMessage());
+        }
+
+        if ($tempUrl) {
+            @unlink($tempUrl);
         }
 
         $this->process->endProcess();
