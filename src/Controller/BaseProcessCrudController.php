@@ -147,7 +147,7 @@ abstract class BaseProcessCrudController extends AbstractCrudController
             });
 
         yield BooleanField::new('resolved', 'Résolu')
-            ->hideOnForm();
+            ->hideWhenCreating();
 
 
         $optionsType = $this->getOptionsFormType($processType);
