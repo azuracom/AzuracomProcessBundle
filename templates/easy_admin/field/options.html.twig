@@ -1,0 +1,50 @@
+{% macro cellContent(field) %}
+    {% set values = field.vars.data is iterable ? field.vars.data : [field.vars.data ] %}
+    {% if field.vars.choices is defined %}
+        <ul>
+            {% for itemValue in values %}
+                {% for choice in field.vars.choices %}
+                    {% if choice.value == itemValue %}
+                        <li>{{ choice.label }}</li>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <ul class="list-unstyled">
+            {% for itemValue in values %}
+                <li>
+                    {% if values|length > 1 %}-&nbsp;{% endif %}
+                    {% if "checkbox" in field.vars.block_prefixes %}
+                        {{ itemValue ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-times"></i>' }}
+                    {% else %}
+                        {{ itemValue }}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %} 
+{% endmacro %}
+
+{% macro table(form) %}
+    <table class="table">
+        {% for key, field in form %}         
+            <tr>
+                {% if key matches '/^\\d+$/' == 0  %}
+                    <th>{{ field.vars.label }}</th>
+                {% endif %}
+                <td>
+                    {% if field.children|length and not field.vars.choices is defined %}
+                        {{ _self.table(field) }}
+                    {% else %}
+
+                        {{  _self.cellContent(field) }}
+                    
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endmacro %}
+
+{{ _self.table(field.formattedValue.form.options) }}

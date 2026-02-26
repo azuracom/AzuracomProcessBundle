@@ -21,6 +21,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\HiddenField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
@@ -153,9 +154,19 @@ abstract class BaseProcessCrudController extends AbstractCrudController
         $optionsType = $this->getOptionsFormType($processType);
 
         if ($optionsType) {
-            yield ArrayField::new('options', 'Options')
+            yield HiddenField::new('options', 'Options')
                 ->setFormType($optionsType)
-                ->onlyOnForms();
+                ->setTemplatePath('@AzuracomProcess/easy_admin/field/options.html.twig')
+                ->hideOnIndex()
+                ->formatValue(function ($value) use ($optionsType) {
+                    return [
+                        'value' => $value,
+                        'form' => $this->createFormBuilder(['options' => $value])
+                            ->add('options', $optionsType)
+                            ->getForm()
+                            ->createView()
+                    ];
+                });
         }
 
         yield DateField::new('startedAt', 'Date de début')
@@ -192,8 +203,6 @@ abstract class BaseProcessCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $actions->remove(Crud::PAGE_INDEX, Action::DELETE);
-        $actions->remove(Crud::PAGE_DETAIL, Action::DELETE);
         $actions->remove(Crud::PAGE_INDEX, Action::EDIT);
         $actions->remove(Crud::PAGE_DETAIL, Action::EDIT);
 
