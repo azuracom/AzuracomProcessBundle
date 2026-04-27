@@ -29,11 +29,7 @@
 
         <field name="resolved" type="boolean"/>
 
-        <field name="useMessenger" type="boolean">
-            <options>
-                <option name="default">false</option>
-            </options>
-        </field>
+        <field name="useMessenger" type="boolean" nullable="false" />
 
         <field name="createdAt" type="datetime" nullable="true">
             <gedmo:timestampable on="create"/>
