@@ -12,7 +12,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Process
- * @Vich\Uploadable
  */
 #[Vich\Uploadable]
 class Process implements ResourceInterface, ProcessInterface
@@ -34,8 +33,6 @@ class Process implements ResourceInterface, ProcessInterface
 
     /**
      * @var File
-     *
-     * @Vich\UploadableField(mapping="process", fileNameProperty="filename")
      */
     #[Vich\UploadableField(mapping:"process", fileNameProperty:"filename")]
     protected $file;

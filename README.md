@@ -274,6 +274,13 @@ sonata_admin:
                 - azuracom_process.admin.process
 ```
 
+```yaml
+# config/services.yaml
+services:
+    Azuracom\ProcessBundle\Controller\ProcessAdminController:
+        autoconfigure: true
+```
+
 Advanced usage
 ============
 

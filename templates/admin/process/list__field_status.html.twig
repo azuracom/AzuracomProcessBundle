@@ -1,7 +1,10 @@
 {% extends '@SonataAdmin/CRUD/base_list_field.html.twig' %}
 
 {% block field %}
-    <span class="label label-{{ object.statusColor }}">
+    <span 
+        class="label label-{{ object.statusColor }}"
+        style="{{ object.statusColor starts with '#' ? 'background-color: ' ~ object.statusColor : null }}"    
+    >
         {{ admin.processHelper.statusLabel(object.status)|trans }}
     </span>
 {% endblock %}

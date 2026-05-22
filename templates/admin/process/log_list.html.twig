@@ -8,10 +8,14 @@
     </thead>
     <tbody>
         {% for row in rows %}
+            {% set color = object.getStatusColorStatic(row.level_name) %}
             <tr>
                 <td>{{ row.datetime.date is defined ? row.datetime.date|date('d/m/Y H:i:s')  : row.datetime|date('d/m/Y H:i:s') }}</td>
                 <td>
-                    <span class="label label-{{ object.getStatusColorStatic(row.level_name) }}">
+                    <span 
+                        class="label label-{{ color }}" 
+                        style="{{ color starts with '#' ? 'background-color: ' ~ color : null }}"
+                    >
                         {{ row.level_name }}
                     </span>
                 </td>

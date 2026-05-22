@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Vich\UploaderBundle\Storage\FileSystemStorage;
+use Vich\UploaderBundle\Storage\StorageInterface;
 
 abstract class AbstractSpreadsheetHandler extends AbstractHandler
 {
@@ -21,7 +22,7 @@ abstract class AbstractSpreadsheetHandler extends AbstractHandler
 
     public function __construct(
         protected ?EntityManagerInterface $em = null,
-        protected ?FileSystemStorage $fileSystemStorage = null,
+        protected ?StorageInterface $fileSystemStorage = null,
         protected ?TranslatorInterface $translator = null,
         protected ?FilesystemOperator $processStorage = null,
     ) {}
