@@ -3,25 +3,19 @@
 namespace Azuracom\ProcessBundle\Factory;
 
 use Azuracom\ProcessBundle\Model\ProcessResourceTagInterface;
-use Sylius\Component\Resource\Factory\FactoryInterface;
 
 class ProcessResourceTagFactory implements FactoryInterface
 {
-
-    /** @var FactoryInterface */
-    private $factory;
-
-    public function __construct(FactoryInterface $factory)
-    {
-        $this->factory = $factory;
-    }
+    public function __construct(
+        private readonly string $processResourceTagClass,
+    ) {}
 
     public function createNew(): ProcessResourceTagInterface
     {
-        return $this->factory->createNew();
+        return new $this->processResourceTagClass();
     }
 
-    public function createFromArray($array): ProcessResourceTagInterface
+    public function createFromArray(array $array): ProcessResourceTagInterface
     {
         $resourceTag = $this->createNew();
 
@@ -32,7 +26,7 @@ class ProcessResourceTagFactory implements FactoryInterface
         return $resourceTag;
     }
 
-    public function createFromResource($resource, $comment = null): ProcessResourceTagInterface
+    public function createFromResource(mixed $resource, ?string $comment = null): ProcessResourceTagInterface
     {
         $resourceTag = $this->createNew();
 

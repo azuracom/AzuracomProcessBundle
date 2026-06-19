@@ -5,6 +5,7 @@ namespace Azuracom\ProcessBundle\Model;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Security\Core\User\UserInterface;
 use DateTime;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Query;
 
 interface ProcessInterface
@@ -25,7 +26,10 @@ interface ProcessInterface
 
     public function resetRessourceTags(): self;
 
-    public function getResourceTags();
+    /**
+     * @return Collection<int, ProcessResourceTagInterface>
+     */
+    public function getResourceTags(): Collection;
 
     public function removeResourceTag(ProcessResourceTagInterface $resourceTag): ProcessInterface;
 
@@ -37,7 +41,7 @@ interface ProcessInterface
 
     public static function getStatusColorStatic(string $status): string;
 
-    public function getId();
+    public function getId(): ?int;
 
     public function setType(string $type): self;
 
@@ -67,9 +71,9 @@ interface ProcessInterface
 
     public function getOptions(): array;
 
-    public function setOption(string $key, $value): self;
+    public function setOption(string $key, mixed $value): self;
 
-    public function getOption(string $key);
+    public function getOption(string $key): mixed;
 
     public function setOriginalFilename(?string $originalFilename = null): self;
 
@@ -98,9 +102,12 @@ interface ProcessInterface
     /**
      * @return Query[]
      */
-    public function getQueries();
+    public function getQueries(): array;
 
-    public function setQueries($queries): self;
+    /**
+     * @param Query[] $queries
+     */
+    public function setQueries(array $queries): self;
 
     public function addQuery(Query $query): self;
 

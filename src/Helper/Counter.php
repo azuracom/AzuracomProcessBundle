@@ -6,7 +6,7 @@ class Counter
 {
     private array $types = [];
 
-    public function increment($type = 'default')
+    public function increment(string $type = 'default'): void
     {
         if (!isset($this->types[$type])) {
             $this->types[$type] = 0;
@@ -15,12 +15,12 @@ class Counter
         $this->types[$type]++;
     }
 
-    public function get($type = 'default')
+    public function get(string $type = 'default'): int
     {
         return isset($this->types[$type]) ? $this->types[$type] : 0;
     }
 
-    public function reset()
+    public function reset(): void
     {
         $this->types = [];
     }

@@ -112,9 +112,9 @@ class ProcessAdmin extends AbstractAdmin
 
     public function configurePersistentParameters(): array
     {
-        if (preg_match('#create#', $this->getRequest()->get('_route'))) {
+        if (preg_match('#create#', $this->getRequest()->attributes->get('_route'))) {
             return [
-                'type' => $this->getRequest()->get('type'),
+                'type' => $this->getRequest()->query->get('type'),
             ];
         }
         return [];
@@ -247,7 +247,7 @@ class ProcessAdmin extends AbstractAdmin
         $process = parent::createNewInstance();
         $user = $this->tokenStorage->getToken()->getUser();
         $process->setUser($user);
-        $type = $this->getRequest()->get('type');
+        $type = $this->getRequest()->query->get('type');
         $process->setType($type);
         if (isset($this->getDeferTypes()[$type]) && $this->getDeferTypes()[$type] == 'force') {
             $process->setStatus(ProcessInterface::STATUS_WAITING_DEFERRED);

@@ -3,7 +3,7 @@
 namespace Azuracom\ProcessBundle\Command;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Sylius\Component\Resource\Repository\RepositoryInterface;
+use Doctrine\ORM\EntityRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,7 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ClearProcessCommand extends Command
 {
 
-    /** @var RepositoryInterface */
+    /** @var EntityRepository */
     private $repository;
 
     /** @var EntityManagerInterface */
@@ -22,7 +22,7 @@ class ClearProcessCommand extends Command
 
     const DEFAULT_MODIFY = '6 months';
 
-    public function __construct(RepositoryInterface $processRepository, EntityManagerInterface $processManager)
+    public function __construct(EntityRepository $processRepository, EntityManagerInterface $processManager)
     {
         parent::__construct();
         $this->repository = $processRepository;

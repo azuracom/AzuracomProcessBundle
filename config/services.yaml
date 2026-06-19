@@ -4,22 +4,39 @@ services:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         public: true
+        bind:
+            # Replaces the Sylius-generated named autowiring aliases.
+            $processRepository: '@azuracom_process.repository.process'
+            $processManager: '@azuracom_process.manager.process'
 
     #public services
     azuracom_process.handler_provider:
         class: Azuracom\ProcessBundle\Handler\HandlerProvider
-    
+
     azuracom_process.helper:
         class: Azuracom\ProcessBundle\Helper\ProcessHelper
         arguments:
             $typeList: '%azuracom_process.types%'
             $statusList: '%azuracom_process.status%'
-        
+
     azuracom_process.monolog.process_handler:
         class: Azuracom\ProcessBundle\Monolog\Handler\ProcessHandler
 
+    #factories (previously provided/decorated through Sylius resources)
+    azuracom_process.factory.process:
+        class: Azuracom\ProcessBundle\Factory\ProcessFactory
+        public: true
+        autowire: false
+        arguments:
+            $processClass: '%azuracom_process.model.process.class%'
+            $tokenStorage: '@security.token_storage'
 
-
+    azuracom_process.factory.process_resource_tag:
+        class: Azuracom\ProcessBundle\Factory\ProcessResourceTagFactory
+        public: true
+        autowire: false
+        arguments:
+            $processResourceTagClass: '%azuracom_process.model.process_resource_tag.class%'
 
     #private services
     #Listeners
@@ -28,53 +45,39 @@ services:
         autowire: true
         autoconfigure: true
         tags:
-            - { name: 'doctrine.event_listener', event: 'postRemove', connection: 'default' }  
+            - { name: 'doctrine.event_listener', event: 'postRemove', connection: 'default' }
 
+    # Arguments ($processClass / $userClassName) are injected by AzuracomProcessExtension.
     Azuracom\ProcessBundle\EventListener\ORMUserMappingSubscriber:
-        arguments: ['@sylius.resource_registry',null]
         public: false
+        autowire: false
+        autoconfigure: false
         tags:
-            - { name: 'doctrine.event_subscriber' , priority: 8193 }              
-            
-            
-    azuracom_process.custom_factory.process_resource_tag:
-        class: Azuracom\ProcessBundle\Factory\ProcessResourceTagFactory
-        decorates: 'azuracom_process.factory.process_resource_tag'
-        decoration_priority: 256
-        public: false
-        arguments: ['@azuracom_process.custom_factory.process_resource_tag.inner']     
-        
-    azuracom_process.custom_factory.process:
-        class: Azuracom\ProcessBundle\Factory\ProcessFactory
-        decorates: 'azuracom_process.factory.process'
-        decoration_priority: 256
-        public: false
-        arguments: ['@azuracom_process.custom_factory.process.inner','@security.token_storage']            
+            - { name: 'doctrine.event_listener', event: 'loadClassMetadata', priority: 8193 }
 
     #commands
     Azuracom\ProcessBundle\Command\ClearProcessCommand:
         public: false
         tags:
-            - { name: 'console.command' }    
-            
+            - { name: 'console.command' }
+
     Azuracom\ProcessBundle\Command\DeferProcessHandleCommand:
         public: false
         tags:
-            - { name: 'console.command' } 
-            
+            - { name: 'console.command' }
+
     Azuracom\ProcessBundle\Form\:
         resource: '../src/Form'
         tags: ['form.type']
-                        
 
     #messenger
     Azuracom\ProcessBundle\Messenger\ProcessMessageHandler:
         tags: [messenger.message_handler]
 
     #aliases
-    Azuracom\ProcessBundle\Handler\HandlerProviderInterface: '@azuracom_process.handler_provider'   
-    Azuracom\ProcessBundle\Helper\ProcessHelperInterface: '@azuracom_process.helper'       
-        
+    Azuracom\ProcessBundle\Handler\HandlerProviderInterface: '@azuracom_process.handler_provider'
+    Azuracom\ProcessBundle\Helper\ProcessHelperInterface: '@azuracom_process.helper'
+
 parameters:
     azuracom_process.types: []
     azuracom_process.status: []

@@ -3,34 +3,19 @@
 namespace Azuracom\ProcessBundle;
 
 use Azuracom\ProcessBundle\DependencyInjection\Compiler\ProcessHandlerPass;
-use Sylius\Bundle\ResourceBundle\AbstractResourceBundle;
-use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-class AzuracomProcessBundle extends AbstractResourceBundle
+class AzuracomProcessBundle extends Bundle
 {
-
-    public function getSupportedDrivers(): array
-    {
-        return [
-            SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
-        ];
-    }
-
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);
+
         $container->addCompilerPass(new ProcessHandlerPass());
-    }
 
-    protected function getConfigFilesPath(): string
-    {
-        $path= sprintf(
-            '%s/../config/doctrine/%s',
-            $this->getPath(),
-            strtolower($this->getDoctrineMappingDirectory()),
-        );
-
-        return $path;
+        // Doctrine mappings (Model superclasses + default entities) are registered through
+        // doctrine.orm.mappings in AzuracomProcessExtension::prepend(), so the default concrete
+        // entities can be skipped when a project overrides them.
     }
 }

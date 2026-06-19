@@ -5,7 +5,7 @@
     <script>
         $(document).ready(function(){
 
-            var id = {{ app.request.get('id') ? app.request.get('id') : 'null' }};
+            var id = {{ app.request.query.get('id') ? app.request.query.get('id') : 'null' }};
 
             if(id && $('.load-log[data-id='+id+']').length === 1 ){
                 loadLog($('.load-log[data-id='+id+']'));

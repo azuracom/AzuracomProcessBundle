@@ -47,7 +47,7 @@ class ProcessAdminController extends CRUDController
 
     protected function redirectTo(Request $request, object $object): RedirectResponse
     {
-        if ($request->get('_route') === "admin_azuracom_process_process_create" && $object->getStatus() === ProcessInterface::STATUS_NEW) {
+        if ($request->attributes->get('_route') === "admin_azuracom_process_process_create" && $object->getStatus() === ProcessInterface::STATUS_NEW) {
             return $this->redirect($this->admin->generateObjectUrl("handle", $object));
         }
 

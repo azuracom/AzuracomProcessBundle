@@ -5,102 +5,83 @@ namespace Azuracom\ProcessBundle\Model;
 use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Attribute as Vich;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Query;
-use Sylius\Component\Resource\Model\ResourceInterface;
+use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Process
+ *
+ * Base mapped superclass. Projects may define a concrete entity extending this class to add
+ * their own fields; otherwise the bundle's default Azuracom\ProcessBundle\Entity\Process is used.
  */
+#[ORM\MappedSuperclass]
 #[Vich\Uploadable]
-class Process implements ResourceInterface, ProcessInterface
+class Process implements ProcessInterface
 {
-    /**
-     * @var int
-     */
-    protected $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
+    #[ORM\Column(type: Types::INTEGER)]
+    protected ?int $id = null;
 
-    /**
-     * @var string
-     */
-    protected $type;
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    protected ?string $type = null;
 
-    /**
-     * @var string
-     */
-    protected $uniqueId;
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    protected ?string $uniqueId = null;
 
-    /**
-     * @var File
-     */
     #[Vich\UploadableField(mapping:"process", fileNameProperty:"filename")]
-    protected $file;
+    protected ?File $file = null;
 
-    /**
-     * @var string
-     */
-    protected $originalFilename;
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    protected ?string $originalFilename = null;
 
-    /**
-     * @var string
-     */
-    protected $filename;
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    protected ?string $filename = null;
 
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    protected ?\DateTime $startedAt = null;
 
-    /**
-     * @var \DateTime
-     */
-    protected $startedAt;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    protected ?\DateTime $endedAt = null;
 
-    /**
-     * @var \DateTime
-     */
-    protected $endedAt;
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    protected ?string $status = self::STATUS_NEW;
 
-    /**
-     * @var string
-     */
-    protected $status = self::STATUS_NEW;
+    #[ORM\Column(type: Types::BOOLEAN)]
+    protected bool $resolved = true;
 
-    /**
-     * @var boolean
-     */
-    protected $resolved = true;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    protected ?array $options = [];
 
-    /**
-     * @var array
-     */
-    protected $options = array();
+    #[ORM\ManyToOne(targetEntity: UserInterface::class)]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')]
+    protected ?UserInterface $user = null;
 
+    /** @var Collection<int, ProcessResourceTagInterface> */
+    #[ORM\OneToMany(targetEntity: ProcessResourceTagInterface::class, mappedBy: 'process', orphanRemoval: true, cascade: ['persist'])]
+    protected Collection $resourceTags;
 
-    protected $user;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Gedmo\Timestampable(on: 'create')]
+    protected ?\DateTime $createdAt = null;
 
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Gedmo\Timestampable(on: 'update')]
+    protected ?\DateTime $updatedAt = null;
 
-    protected $resourceTags;
+    /** @var Query[] */
+    protected array $queries = [];
 
-    /**
-     * @var \DateTime $created
-     */
-    protected $createdAt;
-
-    /**
-     * @var \DateTime $updated
-     */
-    protected $updatedAt;
-
-    /**
-     * @var Query[]
-     */
-    protected $queries = [];
-
-    /**
-     * @var boolean
-     */
-    protected $useMessenger = false;
+    #[ORM\Column(type: Types::BOOLEAN)]
+    protected bool $useMessenger = false;
 
 
-    public function __construct($type = null, $autoStart = true)
+    public function __construct(?string $type = null, bool $autoStart = true)
     {
         $this->resourceTags = new ArrayCollection();
         $this->type = $type;
@@ -110,12 +91,12 @@ class Process implements ResourceInterface, ProcessInterface
         }
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->id ? $this->getType() . " - " . $this->id : "Nouveau processus";
     }
 
-    public function getExecutionDiff()
+    public function getExecutionDiff(): ?\DateInterval
     {
         if (!$this->startedAt || !$this->endedAt) {
             return null;
@@ -156,7 +137,7 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    public function getResourceTags()
+    public function getResourceTags(): Collection
     {
         return $this->resourceTags;
     }
@@ -170,7 +151,7 @@ class Process implements ResourceInterface, ProcessInterface
 
     public function removeResourceTag(ProcessResourceTagInterface $resourceTag): ProcessInterface
     {
-        $this->resourceTags->remove($resourceTag);
+        $this->resourceTags->removeElement($resourceTag);
 
         return $this;
     }
@@ -199,48 +180,24 @@ class Process implements ResourceInterface, ProcessInterface
     }
 
 
-    /**
-     * Get id
-     *
-     * @return int
-     */
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * Set type
-     *
-     * @param string $type
-     *
-     * @return Process
-     */
-    public function setType($type): ProcessInterface
+    public function setType(string $type): ProcessInterface
     {
         $this->type = $type;
 
         return $this;
     }
 
-    /**
-     * Get type
-     *
-     * @return string
-     */
     public function getType(): string
     {
         return $this->type;
     }
 
 
-    /**
-     * Set user
-     *
-     * @param UserInterface $user
-     *
-     * @return Process
-     */
     public function setUser(?UserInterface $user = null): ProcessInterface
     {
         $this->user = $user;
@@ -248,11 +205,6 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * Get user
-     *
-     * @return UserInterface
-     */
     public function getUser(): ?UserInterface
     {
         return $this->user;
@@ -264,10 +216,6 @@ class Process implements ResourceInterface, ProcessInterface
      * bundle's configuration parameter 'inject_on_load' is set to 'true' this setter
      * must be able to accept an instance of 'File' as the bundle will inject one here
      * during Doctrine hydration.
-     *
-     * @param File|\Symfony\Component\HttpFoundation\File\UploadedFile|null $file
-     *
-     * @return Process
      */
     public function setFile(?File $file = null): ProcessInterface
     {
@@ -286,46 +234,24 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * @return File|null
-     */
     public function getFile(): ?File
     {
         return $this->file;
     }
 
-    /**
-     * Set filename
-     *
-     * @param string $filename
-     *
-     * @return Process
-     */
-    public function setFilename($filename): ProcessInterface
+    public function setFilename(?string $filename): ProcessInterface
     {
         $this->filename = $filename;
 
         return $this;
     }
 
-    /**
-     * Get filename
-     *
-     * @return string
-     */
     public function getFilename(): ?string
     {
         return $this->filename;
     }
 
 
-    /**
-     * Set createdAt
-     *
-     * @param \DateTime $createdAt
-     *
-     * @return Process
-     */
     public function setCreatedAt(?\DateTime $createdAt): ProcessInterface
     {
         $this->createdAt = $createdAt;
@@ -333,23 +259,11 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * Get createdAt
-     *
-     * @return \DateTime
-     */
     public function getCreatedAt(): ?\DateTime
     {
         return $this->createdAt;
     }
 
-    /**
-     * Set updatedAt
-     *
-     * @param \DateTime $updatedAt
-     *
-     * @return Process
-     */
     public function setUpdatedAt(?\DateTime $updatedAt): ProcessInterface
     {
         $this->updatedAt = $updatedAt;
@@ -357,23 +271,11 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * Get updatedAt
-     *
-     * @return \DateTime
-     */
     public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
     }
 
-    /**
-     * Set options
-     *
-     * @param array $options
-     *
-     * @return Process
-     */
     public function setOptions(array $options): ProcessInterface
     {
         $this->options = $options;
@@ -385,21 +287,16 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * Get options
-     *
-     * @return array
-     */
     public function getOptions(): array
     {
         if (!is_array($this->options)) {
-            $this->options = array();
+            $this->options = [];
         }
 
         return $this->options;
     }
 
-    public function setOption(string $key, $value): ProcessInterface
+    public function setOption(string $key, mixed $value): ProcessInterface
     {
         if (is_string($key) && is_string($value)) {
             $this->options[$key] = $value;
@@ -408,21 +305,15 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    public function getOption(string $key)
+    public function getOption(string $key): mixed
     {
         if (isset($this->getOptions()[$key])) {
             return $this->getOptions()[$key];
         }
+
         return null;
     }
 
-    /**
-     * Set originalFilename.
-     *
-     * @param string|null $originalFilename
-     *
-     * @return Process
-     */
     public function setOriginalFilename(?string $originalFilename = null): ProcessInterface
     {
         $this->originalFilename = $originalFilename;
@@ -430,26 +321,16 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * Get originalFilename.
-     *
-     * @return string|null
-     */
     public function getOriginalFilename(): ?string
     {
         return $this->originalFilename;
     }
-    /**
-     * @return \DateTime
-     */
+
     public function getStartedAt(): ?\DateTime
     {
         return $this->startedAt;
     }
 
-    /**
-     * @param \DateTime $startedAt
-     */
     public function setStartedAt(?\DateTime $startedAt): ProcessInterface
     {
         $this->startedAt = $startedAt;
@@ -457,17 +338,11 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * @return \DateTime
-     */
     public function getEndedAt(): ?\DateTime
     {
         return $this->endedAt;
     }
 
-    /**
-     * @param \DateTime $endedAt
-     */
     public function setEndedAt(?\DateTime $endedAt): ProcessInterface
     {
         $this->endedAt = $endedAt;
@@ -475,34 +350,23 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getStatus(): string
     {
         return $this->status;
     }
 
-    /**
-     * @param string $status
-     */
     public function setStatus(string $status): ProcessInterface
     {
         $this->status = $status;
 
         return $this;
     }
-    /**
-     * @return boolean
-     */
+
     public function isResolved(): bool
     {
         return $this->resolved;
     }
 
-    /**
-     * @param boolean $resolved
-     */
     public function setResolved(bool $resolved): ProcessInterface
     {
         $this->resolved = $resolved;
@@ -510,23 +374,11 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * Get the value of uniqueId
-     *
-     * @return  string
-     */
     public function getUniqueId(): ?string
     {
         return $this->uniqueId;
     }
 
-    /**
-     * Set the value of uniqueId
-     *
-     * @param  string  $uniqueId
-     *
-     * @return  self
-     */
     public function setUniqueId(?string $uniqueId): ProcessInterface
     {
         $this->uniqueId = $uniqueId;
@@ -535,23 +387,17 @@ class Process implements ResourceInterface, ProcessInterface
     }
 
     /**
-     * Get the value of queries
-     *
-     * @return  Query[]
+     * @return Query[]
      */
-    public function getQueries()
+    public function getQueries(): array
     {
         return $this->queries;
     }
 
     /**
-     * Set the value of queries
-     *
-     * @param  Query[]  $queries
-     *
-     * @return  self
+     * @param Query[] $queries
      */
-    public function setQueries($queries): ProcessInterface
+    public function setQueries(array $queries): ProcessInterface
     {
         $this->queries = $queries;
 
@@ -577,24 +423,12 @@ class Process implements ResourceInterface, ProcessInterface
         return $this;
     }
 
-    /**
-     * Get the value of useMessenger
-     *
-     * @return  boolean
-     */ 
     public function useMessenger(): bool
     {
         return $this->useMessenger;
     }
 
-    /**
-     * Set the value of useMessenger
-     *
-     * @param  boolean  $useMessenger
-     *
-     * @return  self
-     */ 
-    public function setUseMessenger(bool $useMessenger): self
+    public function setUseMessenger(bool $useMessenger): ProcessInterface
     {
         $this->useMessenger = $useMessenger;
 

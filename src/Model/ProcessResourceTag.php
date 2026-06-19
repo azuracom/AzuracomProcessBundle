@@ -2,106 +2,79 @@
 
 namespace Azuracom\ProcessBundle\Model;
 
-use Sylius\Component\Resource\Model\ResourceInterface;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
 
-class ProcessResourceTag implements ResourceInterface, ProcessResourceTagInterface
+/**
+ * Base mapped superclass. Projects may define a concrete entity extending this class; otherwise the
+ * bundle's default Azuracom\ProcessBundle\Entity\ProcessResourceTag is used.
+ */
+#[ORM\MappedSuperclass]
+class ProcessResourceTag implements ProcessResourceTagInterface
 {
-    /**
-     * @var int
-     */
-    protected $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
+    #[ORM\Column(type: Types::INTEGER)]
+    protected ?int $id = null;
 
-    /**
-     * @var string
-     */
-    protected $className;
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    protected ?string $className = null;
 
-    /**
-     * @var string
-     */
-    protected $resourceId;
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    protected ?string $resourceId = null;
 
-    /**
-     * @var string
-     */
-    protected $resourceCode;
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    protected ?string $resourceCode = null;
 
-    /**
-     * @var string
-     */
-    protected $comment;
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    protected ?string $comment = null;
 
-    /**
-     * @var Process
-     */
-    protected $process;
+    #[ORM\ManyToOne(targetEntity: ProcessInterface::class, inversedBy: 'resourceTags')]
+    #[ORM\JoinColumn(name: 'process_id', referencedColumnName: 'id')]
+    protected ?ProcessInterface $process = null;
 
-    /**
-     * @return string
-     */
-    public function getClassName() : string
+    public function getClassName(): string
     {
         return $this->className;
     }
 
-    /**
-     * @param string $className
-     */
-    public function setClassName($className) : ProcessResourceTagInterface
+    public function setClassName(string $className): ProcessResourceTagInterface
     {
         $this->className = $className;
-        
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getResourceId() : string
+    public function getResourceId(): string
     {
         return $this->resourceId;
     }
 
-    /**
-     * @param string $resourceId
-     */
-    public function setResourceId(string $resourceId) : ProcessResourceTagInterface
+    public function setResourceId(string $resourceId): ProcessResourceTagInterface
     {
         $this->resourceId = $resourceId;
 
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getResourceCode() :?string
+    public function getResourceCode(): ?string
     {
         return $this->resourceCode;
     }
 
-    /**
-     * @param string $resourceCode
-     */
-    public function setResourceCode(?string $resourceCode) : ProcessResourceTagInterface
+    public function setResourceCode(?string $resourceCode): ProcessResourceTagInterface
     {
         $this->resourceCode = $resourceCode;
 
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getComment() : string
+    public function getComment(): ?string
     {
         return $this->comment;
     }
 
-    /**
-     * @param string $comment
-     */
-    public function setComment(?string $comment) : ProcessResourceTagInterface
+    public function setComment(?string $comment): ProcessResourceTagInterface
     {
         $this->comment = $comment;
 
@@ -109,22 +82,19 @@ class ProcessResourceTag implements ResourceInterface, ProcessResourceTagInterfa
     }
 
 
-    public function getProcess() : ProcessInterface
+    public function getProcess(): ProcessInterface
     {
         return $this->process;
     }
 
-    public function setProcess(ProcessInterface $process) : ProcessResourceTagInterface
+    public function setProcess(ProcessInterface $process): ProcessResourceTagInterface
     {
         $this->process = $process;
 
         return $this;
     }
 
-    /**
-     * @return number
-     */
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }

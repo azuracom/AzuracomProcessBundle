@@ -5,7 +5,7 @@ namespace Azuracom\ProcessBundle\Command;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Sylius\Component\Resource\Repository\RepositoryInterface;
+use Doctrine\ORM\EntityRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'azuracom:process:defer-handle', description: 'Deferred process handle')]
 class DeferProcessHandleCommand extends Command
 {
-    /** @var RepositoryInterface */
+    /** @var EntityRepository */
     private $repository;
 
     /** @var EntityManagerInterface */
@@ -26,7 +26,7 @@ class DeferProcessHandleCommand extends Command
     private $provider;
 
     public function __construct(
-        RepositoryInterface $processRepository,
+        EntityRepository $processRepository,
         EntityManagerInterface $processManager,
         HandlerProviderInterface $provider
 

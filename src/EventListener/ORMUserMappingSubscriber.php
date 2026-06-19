@@ -2,38 +2,35 @@
 
 namespace Azuracom\ProcessBundle\EventListener;
 
-use Azuracom\ProcessBundle\Model\Process;
-use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
-use Sylius\Bundle\ResourceBundle\EventListener\AbstractDoctrineSubscriber;
-use Sylius\Component\Resource\Metadata\RegistryInterface;
 
-class ORMUserMappingSubscriber extends AbstractDoctrineSubscriber
+/**
+ * Drops the Process "user" association when no user class is configured. When a user class IS
+ * configured, the UserInterface target is resolved through doctrine.orm.resolve_target_entities
+ * (registered by AzuracomProcessExtension), so nothing has to be done here.
+ * Wired as a Doctrine "loadClassMetadata" listener; its arguments are injected by the extension.
+ */
+class ORMUserMappingSubscriber
 {
-    private $userClassName;
-
-    public function __construct(RegistryInterface $resourceRegistry,$userClassName = null)
-    {
-        parent::__construct($resourceRegistry);
-        $this->userClassName = $userClassName;
-    }
-
-    public function getSubscribedEvents(): array
-    {
-        return [
-            Events::loadClassMetadata,
-        ];
-    }
+    public function __construct(
+        private readonly string $processClass,
+        private readonly ?string $userClassName = null,
+    ) {}
 
     public function loadClassMetadata(LoadClassMetadataEventArgs $eventArgs): void
     {
+        if ($this->userClassName) {
+            return;
+        }
+
         $metadata = $eventArgs->getClassMetadata();
-        if($metadata->getName() == Process::class){
-            if(!$this->userClassName){
-                unset($metadata->associationMappings['user']);
-            }else{
-                $metadata->associationMappings['user']['targetEntity'] = $this->userClassName;
-            }
+
+        if ($metadata->getName() !== $this->processClass) {
+            return;
+        }
+
+        if (isset($metadata->associationMappings['user'])) {
+            unset($metadata->associationMappings['user']);
         }
     }
 }

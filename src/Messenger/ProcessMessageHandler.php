@@ -5,11 +5,11 @@ namespace Azuracom\ProcessBundle\Messenger;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Sylius\Component\Resource\Repository\RepositoryInterface;
+use Doctrine\ORM\EntityRepository;
 
 class ProcessMessageHandler
 {
-    /** @var RepositoryInterface */
+    /** @var EntityRepository */
     private $repository;
 
     /** @var EntityManagerInterface */
@@ -19,7 +19,7 @@ class ProcessMessageHandler
     private $provider;
 
     public function __construct(
-        RepositoryInterface $processRepository,
+        EntityRepository $processRepository,
         EntityManagerInterface $processManager,
         HandlerProviderInterface $provider
     ) {

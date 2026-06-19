@@ -48,7 +48,7 @@ class ProcessHelper implements ProcessHelperInterface
         return $array;
     }
 
-    public function __call($name, $arguments)
+    public function __call(string $name, array $arguments): void
     {
         if (method_exists($this->logger, $name)) {
             call_user_func_array([$this->logger, $name], $arguments);

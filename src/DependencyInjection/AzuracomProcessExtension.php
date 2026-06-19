@@ -2,94 +2,168 @@
 
 namespace Azuracom\ProcessBundle\DependencyInjection;
 
+use Azuracom\ProcessBundle\Entity\Process as DefaultProcess;
+use Azuracom\ProcessBundle\Entity\ProcessResourceTag as DefaultProcessResourceTag;
 use Azuracom\ProcessBundle\EventListener\ORMUserMappingSubscriber;
-use Symfony\Component\Config\FileLocator;
 use Azuracom\ProcessBundle\Handler\HandlerInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
-use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
+use Doctrine\ORM\EntityRepository;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Security\Core\User\UserInterface;
 
-class AzuracomProcessExtension extends AbstractResourceExtension implements PrependExtensionInterface
+class AzuracomProcessExtension extends Extension implements PrependExtensionInterface
 {
-
     public function prepend(ContainerBuilder $container): void
     {
         $bundleRoot = \dirname(__DIR__, 2); // .../process-bundle/
-        $translationsPath = $bundleRoot . '/translations';
 
-        if (!is_dir($translationsPath)) {
-            return;
+        $translationsPath = $bundleRoot . '/translations';
+        if (is_dir($translationsPath) && class_exists(\Symfony\Component\Translation\Translator::class)) {
+            $container->prependExtensionConfig('framework', [
+                'translator' => [
+                    'paths' => [$translationsPath],
+                ],
+            ]);
         }
 
-        $container->prependExtensionConfig('framework', [
-            'translator' => [
-                'paths' => [$translationsPath],
-            ],
-        ]);
+        if ($container->hasExtension('twig')) {
+            $container->prependExtensionConfig('twig', [
+                'paths' => [
+                    $bundleRoot . '/templates' => 'AzuracomProcess',
+                ],
+            ]);
+        }
 
-        $container->prependExtensionConfig('twig', [
-            'paths' => [
-                \dirname(__DIR__, 2) . '/templates' => 'AzuracomProcess',
+        // Resolve the resource interfaces to the configured (or default) concrete entities,
+        // replacing what Sylius Resource used to do.
+        $config = $this->processConfiguration(
+            $this->getConfiguration([], $container),
+            $container->getExtensionConfig($this->getAlias()),
+        );
+        $process = $config['resources']['process']['classes'];
+        $tag = $config['resources']['process_resource_tag']['classes'];
+
+        $resolveTargetEntities = [
+            $process['interface'] => $process['model'],
+            $tag['interface'] => $tag['model'],
+        ];
+
+        // When a user class is configured, resolve the Process "user" association to it. Otherwise
+        // the ORMUserMappingSubscriber drops the association entirely.
+        if (!empty($config['user_class'])) {
+            $resolveTargetEntities[UserInterface::class] = $config['user_class'];
+        }
+
+        // Always register the mapped superclasses. The default concrete entities are only mapped
+        // when the project keeps both defaults: as soon as one resource model is overridden, the
+        // project is responsible for mapping its own concrete entities (avoiding a table clash).
+        $mappings = [
+            'AzuracomProcessModel' => [
+                'type' => 'attribute',
+                'dir' => $bundleRoot . '/src/Model',
+                'prefix' => 'Azuracom\\ProcessBundle\\Model',
+                'is_bundle' => false,
+            ],
+        ];
+
+        $usesDefaultEntities = $process['model'] === DefaultProcess::class
+            && $tag['model'] === DefaultProcessResourceTag::class;
+
+        if ($usesDefaultEntities) {
+            $mappings['AzuracomProcessEntity'] = [
+                'type' => 'attribute',
+                'dir' => $bundleRoot . '/src/Entity',
+                'prefix' => 'Azuracom\\ProcessBundle\\Entity',
+                'is_bundle' => false,
+            ];
+        }
+
+        $container->prependExtensionConfig('doctrine', [
+            'orm' => [
+                'mappings' => $mappings,
+                'resolve_target_entities' => $resolveTargetEntities,
             ],
         ]);
     }
 
-    public function load(array $config, ContainerBuilder $container): void
+    public function load(array $configs, ContainerBuilder $container): void
     {
-        $config = $this->processConfiguration($this->getConfiguration([], $container), $config);
-        $loader = new YamlFileLoader($container, new FileLocator(dirname(__DIR__) . '/../config'));
+        $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
+
+        $loader = new YamlFileLoader($container, new FileLocator(\dirname(__DIR__) . '/../config'));
         $loader->load('services.yaml');
 
+        $process = $config['resources']['process']['classes'];
+        $tag = $config['resources']['process_resource_tag']['classes'];
+
+        // Parameters consumed by sonata_admin.yaml and the factories declared in services.yaml.
+        $container->setParameter('azuracom_process.model.process.class', $process['model']);
+        $container->setParameter('azuracom_process.model.process_resource_tag.class', $tag['model']);
+        $container->setParameter('azuracom_process.admin.process.class', $process['admin']);
+        $container->setParameter('azuracom_process.admin.process_resource_tag.class', $tag['admin']);
+
+        // Entity manager + repositories (previously generated by Sylius "registerResources").
+        $container->setAlias('azuracom_process.manager.process', 'doctrine.orm.default_entity_manager')->setPublic(true);
+
+        $this->registerRepository($container, 'azuracom_process.repository.process', $process['model'], $process['repository']);
+        $this->registerRepository($container, 'azuracom_process.repository.process_resource_tag', $tag['model'], $tag['repository']);
+
+        if ($process['factory']) {
+            $container->getDefinition('azuracom_process.factory.process')->setClass($process['factory']);
+        }
+        if ($tag['factory']) {
+            $container->getDefinition('azuracom_process.factory.process_resource_tag')->setClass($tag['factory']);
+        }
 
         if (class_exists(\Sonata\AdminBundle\Controller\CRUDController::class)) {
             $loader->load('sonata_admin.yaml');
 
-            //setUserClass to process admin
-            $definition = $container->getDefinition("azuracom_process.admin.process");
+            $definition = $container->getDefinition('azuracom_process.admin.process');
             $definition->addMethodCall('setUserClass', [$config['user_class']]);
         }
 
-        //register sylius resource
-        $this->registerResources('azuracom_process', $config['driver'], $config['resources'], $container);
-
-        //add tag to all class that implements HandlerInterface
+        // Tag every class implementing HandlerInterface.
         $container->registerForAutoconfiguration(HandlerInterface::class)
-            ->addTag("azuracom_process.handler");
+            ->addTag('azuracom_process.handler');
 
-        //add status in parameter
+        // Build the status list parameter from the interface constants.
         $oClass = new \ReflectionClass(ProcessInterface::class);
         $status = [];
         foreach ($oClass->getConstants() as $constName => $value) {
-            if (preg_match("#^STATUS_#", $constName)) {
-                $status[$value] = sprintf("azuracom_process.process.status.%s", $value);
+            if (preg_match('#^STATUS_#', $constName)) {
+                $status[$value] = sprintf('azuracom_process.process.status.%s', $value);
             }
         }
-
         $container->setParameter('azuracom_process.status', $status);
 
-
-        //set ORMUserMappingSubscriber userClassName argument
-        if ($container->has(ORMUserMappingSubscriber::class)) {
-            $definition = $container->getDefinition(ORMUserMappingSubscriber::class);
-            $definition->replaceArgument(1, $config['user_class']);
+        // Configure the user-mapping listener with the concrete Process entity + the project user class.
+        if ($container->hasDefinition(ORMUserMappingSubscriber::class)) {
+            $subscriber = $container->getDefinition(ORMUserMappingSubscriber::class);
+            $subscriber->setArgument('$processClass', $process['model']);
+            $subscriber->setArgument('$userClassName', $config['user_class']);
         }
     }
 
-    protected function registerResources(
-        string $applicationName,
-        string $driver,
-        array $registeredResources,
-        ContainerBuilder $container
-    ): void {
-        parent::registerResources($applicationName, $driver, $registeredResources, $container);
+    private function registerRepository(ContainerBuilder $container, string $id, string $modelClass, ?string $repositoryClass): void
+    {
+        if ($repositoryClass) {
+            // Project-provided repository service (e.g. a ServiceEntityRepository).
+            $container->setAlias($id, $repositoryClass)->setPublic(true);
 
-        foreach ($registeredResources as $resourceName => $resourceConfig) {
-            if (!isset($resourceConfig['classes']['admin'])) {
-                continue;
-            }
-            $container->setParameter(sprintf("azuracom_process.admin.%s.class", $resourceName), $resourceConfig['classes']['admin']);
+            return;
         }
+
+        // Default: the Doctrine repository for the configured entity.
+        $definition = new Definition(EntityRepository::class);
+        $definition->setFactory([new Reference('doctrine.orm.default_entity_manager'), 'getRepository']);
+        $definition->setArguments([$modelClass]);
+        $definition->setPublic(true);
+        $container->setDefinition($id, $definition);
     }
 }
