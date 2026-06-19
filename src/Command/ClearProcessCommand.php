@@ -4,11 +4,13 @@ namespace Azuracom\ProcessBundle\Command;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Sylius\Component\Resource\Repository\RepositoryInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'azuracom:process:clear', description: 'Clear process using a delay')]
 class ClearProcessCommand extends Command
 {
 
@@ -30,8 +32,6 @@ class ClearProcessCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('azuracom:process:clear')
-            ->setDescription('Clear process using a delay')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Process type (coma separated for multiple values)', null)
             ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Process status (coma separated for multiple values)', null)
             ->addOption('resolved', null, InputOption::VALUE_NEGATABLE, 'Only resolved process', null)

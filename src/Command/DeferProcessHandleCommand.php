@@ -6,11 +6,13 @@ use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylius\Component\Resource\Repository\RepositoryInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'azuracom:process:defer-handle', description: 'Deferred process handle')]
 class DeferProcessHandleCommand extends Command
 {
     /** @var RepositoryInterface */
@@ -38,8 +40,6 @@ class DeferProcessHandleCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('azuracom:process:defer-handle')
-            ->setDescription('Deferred process handle')
             ->addOption(
                 'date',
                 null,
