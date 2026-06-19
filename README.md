@@ -1,3 +1,6 @@
+> **Mise à jour vers 3.0.0** : cette version supprime la dépendance à `sylius/resource-bundle`
+> et contient des changements cassants. Voir le guide de migration : [UPGRADE-3.0.md](UPGRADE-3.0.md).
+
 Installation
 ============
 
@@ -9,7 +12,7 @@ Installation
     //...
     "require": {
         //...
-        "azuracom/process-bundle": "^2.0"
+        "azuracom/process-bundle": "^3.0"
     },
     "repositories":[
         {
