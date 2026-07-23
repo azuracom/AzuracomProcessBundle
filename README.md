@@ -93,15 +93,46 @@ vich_uploader:
 
 Configure flysystem
 
+Le bundle utilise une seule storage flysystem (`process.storage`) pour **deux usages** :
+
+- les **fichiers sources** uploadés (via Vich), stockés à la racine de la storage ;
+- les **logs** de chaque process, stockés dans le sous-dossier `logs/` (`logs/<uniqueId>.log`).
+
+La storage est injectée dans le helper et les handlers via l'argument autowiré
+`$processStorage` (alias créé automatiquement par `flysystem-bundle` à partir du nom
+`process.storage`). Comme tout passe par flysystem, il suffit de changer l'adapter
+pour déporter fichiers **et** logs hors du filesystem du host (S3, etc.).
+
 ```yaml
 # Read the documentation at https://github.com/thephpleague/flysystem-bundle/blob/master/docs/1-getting-started.md
 flysystem:
     storages:
+        # Adapter local (défaut) : fichiers dans var/storage/process, logs dans var/storage/process/logs
         process.storage:
             adapter: 'local'
             options:
-                directory: '%kernel.project_dir%/var/storage/process'        
-```   
+                directory: '%kernel.project_dir%/var/storage/process'
+```
+
+Pour stocker les fichiers **et les logs sur S3**, il suffit de basculer l'adapter de
+`process.storage` sur un client S3 (aucun changement de code applicatif) :
+
+```yaml
+flysystem:
+    storages:
+        process.storage:
+            adapter: 'aws'
+            options:
+                client: 'aws_s3_client'          # service League\Flysystem\AwsS3V3\... configuré dans le projet
+                bucket: '%env(S3_PROCESS_BUCKET_NAME)%'
+                prefix: 'process'                # fichiers -> process/..., logs -> process/logs/<uniqueId>.log
+```
+
+> Pendant le traitement, chaque ligne de log est écrite **en local** (via le
+> `ProcessHandler` Monolog, dans `%kernel.logs_dir%/process/<uniqueId>.log`) pour ne
+> pas multiplier les requêtes réseau. Le fichier complet n'est envoyé sur la storage
+> qu'à la fin, lors de `ProcessHelperInterface::endProcess()`, puis la copie locale est
+> supprimée. C'est pourquoi S3 reste performant même avec beaucoup de lignes de log.
 
 Configure mapping for user class  in the `config/packages/doctrine.yaml` file of your project:
 
@@ -119,7 +150,12 @@ bin/console make:migration
 bin/console doctrine:migration:migrate
 ```  
 
-If you use docker + localstorage create a volume corresponding to the file location in prod
+If you use docker + **local** flysystem adapter, create a volume corresponding to the file
+location in prod. Le volume `process_files` n'est nécessaire qu'avec l'adapter `local` :
+si `process.storage` pointe sur S3, fichiers et logs persistés vivent sur S3 et ce volume
+devient inutile. Le volume `process_logs` ne contient que les logs **en cours de
+traitement** (écriture locale avant flush sur la storage) ; il reste utile pour ne pas
+perdre le log d'un process interrompu avant son `endProcess()`.
 
 
 ```yaml
@@ -210,8 +246,10 @@ class ImportProductHandler extends AbstractHandler
             }
         }
 
-        //tag the process as ended
-        $this->process->endProcess();
+        // Tag the process as ended AND flush the log file to the configured storage.
+        // Always call the helper here (not $this->process->endProcess()): the helper
+        // marks the process as ended and uploads the log to the configured storage.
+        $this->helper->endProcess();
     }
 
     public static function getTypeLabel($type) :string
@@ -286,6 +324,53 @@ services:
 
 Advanced usage
 ============
+
+## Utiliser le helper (`ProcessHelperInterface`)
+
+Le helper est disponible dans tous les handlers via `$this->helper` (injecté
+automatiquement par le bundle). Il implémente `Psr\Log\LoggerInterface` : les méthodes
+de log sont donc **explicites et typées** (fini la méthode magique `__call`, plus aucune
+erreur de hint dans l'IDE ni avec PHPStan).
+
+```php
+// Toutes les méthodes PSR-3 sont disponibles et typées :
+$this->helper->debug("détail technique");
+$this->helper->info(sprintf("Nouveau produit: %s", $ref));
+$this->helper->notice("information notable");
+$this->helper->warning("valeur inattendue");   // -> passe le process en STATUS_HAS_WARNING
+$this->helper->error("ligne invalide");        // -> passe le process en STATUS_HAS_ERROR
+$this->helper->critical("...");                // -> STATUS_HAS_ERROR
+// $this->helper->log('info', "..."); // forme générique PSR-3 également supportée
+```
+
+Impact sur le statut du process :
+
+- `warning` → `STATUS_HAS_WARNING` (sans écraser un `STATUS_HAS_ERROR` déjà positionné) ;
+- `error`, `critical`, `alert`, `emergency` → `STATUS_HAS_ERROR` ;
+- `debug`, `info`, `notice` → n'affectent pas le statut.
+
+**Terminer un process** : appelez toujours `endProcess()` **sur le helper** et non sur
+l'entité. Le helper marque le process comme terminé (délègue à `Process::endProcess()`)
+**puis** flushe le fichier de log complet sur la storage configurée et supprime la copie
+locale :
+
+```php
+public function handle(): void
+{
+    $this->process->startProcess();
+
+    // ... traitement + $this->helper->info()/warning()/error() ...
+
+    $this->helper->endProcess(); // fin du process + upload du log sur la storage
+}
+```
+
+> Les handlers qui étendent `AbstractSpreadsheetHandler` n'ont rien à faire : le
+> `endProcess()` du helper est déjà appelé à la fin de leur `handle()`.
+
+La lecture (`getLogAsArray()`, utilisée par l'admin) et la suppression du log
+(`deleteLog()`, appelée automatiquement quand un process est supprimé) passent elles
+aussi par la storage configurée, avec repli sur le fichier local si besoin.
 
 ## Configuration
 

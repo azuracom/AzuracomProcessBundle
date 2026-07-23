@@ -18,11 +18,7 @@ class DeleteProcessLogFileListener
         }
 
         $this->helper->setSubject($entity);
-        $url = $this->helper->getHandler()->getUrl();
-        //remove file when entity is deleted
-        try {
-            unlink($url);
-        } catch (\Exception $e) {
-        };
+        // Remove the log from the configured storage and any local working copy.
+        $this->helper->deleteLog();
     }
 }

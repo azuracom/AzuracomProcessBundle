@@ -89,7 +89,8 @@ abstract class AbstractSpreadsheetHandler extends AbstractHandler
             @unlink($tempUrl);
         }
 
-        $this->process->endProcess();
+        // Delegate to the helper so the log file is flushed to the configured storage.
+        $this->helper->endProcess();
     }
 
     protected function clear(): void

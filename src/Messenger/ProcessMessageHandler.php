@@ -46,7 +46,13 @@ class ProcessMessageHandler
             $handler->getHelper()->error(" Unexcepted error during handle: " . $e->getMessage());
         }
 
-        $process->endProcess();
+        // End through the helper so the log is persisted on the configured storage.
+        // Fall back to the process itself when no handler matched the message.
+        if ($handler && $handler->getHelper()) {
+            $handler->getHelper()->endProcess();
+        } else {
+            $process->endProcess();
+        }
         $this->manager->flush();
     }
 }
