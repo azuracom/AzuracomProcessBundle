@@ -1,5 +1,8 @@
 > **Mise à jour vers 3.0.0** : cette version supprime la dépendance à `sylius/resource-bundle`
 > et contient des changements cassants. Voir le guide de migration : [UPGRADE-3.0.md](UPGRADE-3.0.md).
+>
+> **Mise à jour vers 3.2.0** : les modèles de `Model\` passent en `abstract`. Voir
+> [UPGRADE-3.2.md](UPGRADE-3.2.md).
 
 Installation
 ============
@@ -274,7 +277,7 @@ class ImportProductHandler extends AbstractHandler
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
-use Sylius\Component\Resource\Factory\FactoryInterface;
+use Azuracom\ProcessBundle\Factory\FactoryInterface;
 use App\Process\ImportProductHandler;
 
 
@@ -379,17 +382,25 @@ aussi par la storage configurée, avec repli sur le fichier local si besoin.
 # config/packages/azuracom_process.yaml
 azuracom_process:
     user_class: App\Entity\User #is set use processFactory to automatically set logged user to process, default value is null
-    #overwrite resource, check at SyliusResourceBundle for mor information
     resources:
         process:
             classes:
-                model: Azuracom\ProcessBundle\Model\Process
+                model: Azuracom\ProcessBundle\Entity\Process
                 admin: Azuracom\ProcessBundle\Admin\ProcessAdmin
         process_resource_tag:
             classes:
-                model: Azuracom\ProcessBundle\Model\ProcessResourceTag
+                model: Azuracom\ProcessBundle\Entity\ProcessResourceTag
                 admin: Azuracom\ProcessBundle\Admin\ProcessResourceTagAdmin                
 ```
+
+Ce sont les valeurs par défaut : il n'y a rien à déclarer si le projet n'a pas de champ
+spécifique. `model` attend une **entité concrète**, jamais la mapped superclass
+`Azuracom\ProcessBundle\Model\Process` (voir « Surcharger l'entité Process » dans
+`UPGRADE-3.0.md`).
+
+> Ne jamais faire `new Azuracom\ProcessBundle\Model\Process()` : les classes de `Model\` sont des
+> mapped superclasses, donc `abstract` depuis la 3.2.0. Instancier l'entité concrète, ou mieux, le
+> service `azuracom_process.factory.process`, qui construit la classe configurée ci-dessus.
 
 
 ## Admin configuration
@@ -482,7 +493,7 @@ class ProcessAdmin extends  BaseAdmin
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
-use Sylius\Component\Resource\Factory\FactoryInterface;
+use Azuracom\ProcessBundle\Factory\FactoryInterface;
 
 
 #[Route('/product')]
@@ -530,7 +541,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Azuracom\ProcessBundle\Handler\HandlerProviderInterface;
 use Azuracom\ProcessBundle\Model\ProcessInterface;
 use Azuracom\ProcessBundle\Messenger\ProcessMessage;
-use Sylius\Component\Resource\Factory\FactoryInterface;
+use Azuracom\ProcessBundle\Factory\FactoryInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
 

@@ -8,9 +8,12 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * Base mapped superclass. Projects may define a concrete entity extending this class; otherwise the
  * bundle's default Azuracom\ProcessBundle\Entity\ProcessResourceTag is used.
+ *
+ * Abstract on purpose, for the same reason as Model\Process: instantiating a mapped superclass
+ * yields an object Doctrine can persist but that no Gedmo listener ever sees.
  */
 #[ORM\MappedSuperclass]
-class ProcessResourceTag implements ProcessResourceTagInterface
+abstract class ProcessResourceTag implements ProcessResourceTagInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'AUTO')]

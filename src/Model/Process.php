@@ -18,10 +18,17 @@ use Symfony\Component\Security\Core\User\UserInterface;
  *
  * Base mapped superclass. Projects may define a concrete entity extending this class to add
  * their own fields; otherwise the bundle's default Azuracom\ProcessBundle\Entity\Process is used.
+ *
+ * Abstract on purpose: a mapped superclass must never be instantiated. Doctrine would happily
+ * persist such an instance (it still gets an id generator, and the naming strategy resolves the
+ * table to "process", the very table of the concrete entity), but the Gedmo listeners bail out on
+ * mapped superclasses, so createdAt/updatedAt and every other behavior would stay silently unset.
+ * Always instantiate the concrete entity, or better, use the azuracom_process.factory.process
+ * service, which builds the class configured in azuracom_process.resources.process.classes.model.
  */
 #[ORM\MappedSuperclass]
 #[Vich\Uploadable]
-class Process implements ProcessInterface
+abstract class Process implements ProcessInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'AUTO')]
